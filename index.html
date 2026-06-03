@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chello — C# Learning Dashboard</title>
+
+  <!-- ============================================================
+       CHELLO LEARNING DASHBOARD
+       A single-file interactive dashboard for the whole 40-lesson course.
+
+       This app itself is built from things you learn in the course:
+         - React components & props        (Lessons 26-27)
+         - useState / useEffect            (Lessons 27, 29)
+         - Controlled inputs & live search (Lessons 28, 38)
+         - localStorage to save progress   (Lesson 35)
+         - Dark / light mode with state    (Lesson 32)
+         - Responsive grid with CSS         (Lesson 24)
+
+       No build step — React, ReactDOM and Babel load from a CDN,
+       exactly like Lessons 26-32.
+       ============================================================ -->
+
+  <!-- React + ReactDOM + Babel from CDN (same as the React lessons) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* ---------- CSS variables: one place to control the theme (Lesson 23) ---------- */
+    :root {
+      --bg:          #0f172a;
+      --bg-soft:     #1e293b;
+      --card:        #1e293b;
+      --card-hover:  #273449;
+      --text:        #e2e8f0;
+      --text-dim:    #94a3b8;
+      --primary:     #38bdf8;
+      --primary-2:   #0ea5e9;
+      --border:      #334155;
+      --shadow:      0 10px 30px rgba(0,0,0,0.35);
+      --radius:      14px;
+    }
+    /* Light mode just overrides the same variables (Lesson 32 dark/light toggle) */
+    [data-theme="light"] {
+      --bg:          #f1f5f9;
+      --bg-soft:     #ffffff;
+      --card:        #ffffff;
+      --card-hover:  #f8fafc;
+      --text:        #0f172a;
+      --text-dim:    #475569;
+      --primary:     #0284c7;
+      --primary-2:   #0369a1;
+      --border:      #e2e8f0;
+      --shadow:      0 10px 30px rgba(15,23,42,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      transition: background .25s ease, color .25s ease;
+    }
+
+    /* ---------- Header ---------- */
+    header {
+      background: linear-gradient(135deg, #0c4a6e, #075985);
+      padding: 36px 20px 28px;
+      text-align: center;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+    }
+    [data-theme="light"] header { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+    header h1 { font-size: 2.4rem; color: #fff; letter-spacing: -0.5px; }
+    header p  { color: #e0f2fe; margin-top: 6px; font-size: 1.05rem; }
+
+    .theme-toggle {
+      position: absolute; top: 18px; right: 18px;
+      background: rgba(255,255,255,0.15);
+      color: #fff; border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 999px; padding: 8px 16px;
+      cursor: pointer; font-size: .9rem; font-weight: 600;
+      backdrop-filter: blur(4px); transition: background .2s;
+    }
+    .theme-toggle:hover { background: rgba(255,255,255,0.28); }
+
+    /* ---------- Layout container ---------- */
+    .container { max-width: 1180px; margin: 0 auto; padding: 26px 20px 60px; }
+
+    /* ---------- Stat cards ---------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .stat .num { font-size: 2rem; font-weight: 800; color: var(--primary); }
+    .stat .lbl { color: var(--text-dim); font-size: .85rem; text-transform: uppercase; letter-spacing: .5px; }
+
+    /* ---------- Progress bar ---------- */
+    .progress-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin-bottom: 26px;
+      box-shadow: var(--shadow);
+    }
+    .progress-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .progress-head strong { font-size: 1.05rem; }
+    .progress-head span { color: var(--text-dim); font-size:.9rem; }
+    .bar { height: 14px; background: var(--bg); border-radius: 999px; overflow: hidden; border:1px solid var(--border); }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-2));
+      border-radius: 999px;
+      transition: width .4s ease;
+    }
+    .reset-btn {
+      margin-top: 12px; background: transparent; color: var(--text-dim);
+      border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+      cursor: pointer; font-size: .8rem;
+    }
+    .reset-btn:hover { color: var(--text); border-color: var(--primary); }
+
+    /* ---------- Controls (search + filter) ---------- */
+    .controls { display:flex; gap:12px; flex-wrap:wrap; margin-bottom: 24px; }
+    .search {
+      flex: 1; min-width: 220px;
+      padding: 12px 16px; font-size: 1rem;
+      background: var(--card); color: var(--text);
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    .search:focus { outline: none; border-color: var(--primary); }
+    .filter-chips { display:flex; gap:8px; flex-wrap:wrap; }
+    .chip {
+      padding: 9px 14px; border-radius: 999px; cursor: pointer;
+      background: var(--card); color: var(--text-dim);
+      border: 1px solid var(--border); font-size: .85rem; font-weight: 600;
+      transition: all .15s;
+    }
+    .chip:hover { color: var(--text); }
+    .chip.active { background: var(--primary); color: #04222e; border-color: var(--primary); }
+
+    /* ---------- Phase section ---------- */
+    .phase { margin-bottom: 34px; }
+    .phase-title {
+      display:flex; align-items:center; gap:12px;
+      font-size: 1.3rem; margin-bottom: 4px;
+    }
+    .phase-badge {
+      width: 34px; height: 34px; border-radius: 9px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 800; color:#fff; flex-shrink:0;
+    }
+    .phase-sub { color: var(--text-dim); font-size:.9rem; margin: 2px 0 16px 46px; }
+
+    /* ---------- Lesson grid (responsive, Lesson 24) ---------- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column;
+      transition: transform .15s, background .15s, border-color .15s;
+      position: relative;
+    }
+    .card:hover { transform: translateY(-4px); background: var(--card-hover); border-color: var(--primary); }
+    .card.done { border-color: #22c55e44; }
+    .card.done::after {
+      content: "✓ Done"; position:absolute; top:14px; right:14px;
+      background:#22c55e; color:#04220f; font-size:.7rem; font-weight:800;
+      padding:3px 8px; border-radius:999px;
+    }
+    .card-num {
+      font-size: .75rem; font-weight: 800; color: var(--primary);
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    .card h3 { font-size: 1.12rem; margin: 4px 0 8px; padding-right: 50px; }
+    .card p  { color: var(--text-dim); font-size: .9rem; flex: 1; }
+
+    .tags { display:flex; flex-wrap:wrap; gap:6px; margin: 12px 0; }
+    .tag {
+      font-size: .72rem; padding: 3px 8px; border-radius: 6px;
+      background: var(--bg); color: var(--text-dim); border:1px solid var(--border);
+    }
+
+    .card-actions { display:flex; gap:8px; margin-top: 6px; }
+    .btn {
+      flex:1; text-align:center; padding: 9px 12px; border-radius: 9px;
+      font-size: .85rem; font-weight: 700; cursor: pointer;
+      text-decoration: none; border: 1px solid var(--border);
+      transition: all .15s;
+    }
+    .btn-open { background: var(--primary); color: #04222e; border-color: var(--primary); }
+    .btn-open:hover { background: var(--primary-2); }
+    .btn-code { background: transparent; color: var(--text); }
+    .btn-code:hover { border-color: var(--primary); }
+    .btn-check {
+      background: transparent; color: var(--text-dim);
+      flex: 0 0 auto; padding: 9px 12px;
+    }
+    .btn-check.checked { color: #22c55e; border-color:#22c55e; }
+
+    .empty { text-align:center; color: var(--text-dim); padding: 50px 0; font-size: 1.05rem; }
+
+    footer { text-align:center; color: var(--text-dim); padding: 30px 20px; font-size:.85rem; border-top:1px solid var(--border); }
+    footer a { color: var(--primary); text-decoration:none; }
+
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      header h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // ============================================================
+    // DATA: every lesson in the course.
+    //   entry  = the file that opens directly in a browser (HTML lessons)
+    //   code   = path to view the source (C#/SQL lessons -> GitHub)
+    // ============================================================
+    const GITHUB = "https://github.com/rickysoo/Chello/blob/master/";
+
+    const PHASES = [
+      { id: 1, name: "C# Fundamentals",  color: "#0ea5e9", sub: "Lessons 1-8 · The language itself, in console apps" },
+      { id: 2, name: "MS SQL + C#",      color: "#8b5cf6", sub: "Lessons 9-14 · Store and query data in a real database" },
+      { id: 3, name: "C# Web API",       color: "#f59e0b", sub: "Lessons 15-20 · Build the backend React will talk to" },
+      { id: 4, name: "HTML & CSS",       color: "#ec4899", sub: "Lessons 21-25 · Web pages, forms and responsive design" },
+      { id: 5, name: "React Frontend",   color: "#22c55e", sub: "Lessons 26-32 · A modern interactive user interface" },
+      { id: 6, name: "Full Stack",       color: "#ef4444", sub: "Lessons 33-40 · One complete app, end to end, deployed" },
+    ];
+
+    const LESSONS = [
+      // ---- Phase 1 ----
+      { id:1,  phase:1, title:"Hello World & Variables", desc:"Print to the screen and store data in variables: text, numbers, true/false.", tags:["Console.WriteLine","string","int","bool"], code:"Lesson01/Program.cs", run:"dotnet run" },
+      { id:2,  phase:1, title:"If / Else Decisions", desc:"Make the program react differently based on conditions — a number guessing game.", tags:["if","else if","comparisons"], code:"Lesson02/Program.cs", run:"dotnet run" },
+      { id:3,  phase:1, title:"Loops", desc:"Repeat actions with while, for and foreach. Upgraded guessing game with random numbers.", tags:["while","for","foreach","Random"], code:"Lesson03/Program.cs", run:"dotnet run" },
+      { id:4,  phase:1, title:"Methods", desc:"Break code into named, reusable blocks. Build a calculator.", tags:["methods","return","parameters"], code:"Lesson04/Program.cs", run:"dotnet run" },
+      { id:5,  phase:1, title:"Lists & Arrays", desc:"Store many items and loop through them. A working to-do list.", tags:["List","Add","RemoveAt"], code:"Lesson05/Program.cs", run:"dotnet run" },
+      { id:6,  phase:1, title:"Classes & Objects", desc:"Model real things as blueprints. A bank account with deposit & withdraw.", tags:["class","constructor","properties"], code:"Lesson06/Program.cs", run:"dotnet run" },
+      { id:7,  phase:1, title:"Error Handling", desc:"Catch mistakes gracefully so the app never crashes.", tags:["try","catch","finally","throw"], code:"Lesson07/Program.cs", run:"dotnet run" },
+      { id:8,  phase:1, title:"File Read & Write", desc:"Save data to a file so it survives after the app closes.", tags:["File.ReadAllLines","File.WriteAllLines"], code:"Lesson08/Program.cs", run:"dotnet run" },
+      // ---- Phase 2 ----
+      { id:9,  phase:2, title:"SQL Basics", desc:"Create a database and table, then insert, select, update and delete rows.", tags:["CREATE","INSERT","SELECT","CRUD"], code:"Lesson09/01_CreateDatabase.sql", run:"Run in SSMS" },
+      { id:10, phase:2, title:"C# Connects to SQL", desc:"Read data from the database into a C# console app.", tags:["SqlConnection","SqlCommand","SqlDataReader"], code:"Lesson10/Program.cs", run:"dotnet run" },
+      { id:11, phase:2, title:"CRUD Operations", desc:"Create, Read, Update and Delete records from C#.", tags:["ExecuteScalar","ExecuteNonQuery"], code:"Lesson11/Program.cs", run:"dotnet run" },
+      { id:12, phase:2, title:"SQL Queries", desc:"Filter, sort and summarise data with WHERE, ORDER BY and aggregates.", tags:["WHERE","BETWEEN","AVG","TOP"], code:"Lesson12/Program.cs", run:"dotnet run" },
+      { id:13, phase:2, title:"Stored Procedures", desc:"Run pre-written SQL logic stored inside the database.", tags:["StoredProcedure","OUTPUT param"], code:"Lesson13/Program.cs", run:"dotnet run" },
+      { id:14, phase:2, title:"Mini Project: Grade Tracker", desc:"A complete console app combining everything in Phase 2.", tags:["switch","CASE","capstone"], code:"Lesson14/Program.cs", run:"dotnet run" },
+      // ---- Phase 3 ----
+      { id:15, phase:3, title:"What is an API?", desc:"Your first ASP.NET Web API returning JSON from several endpoints.", tags:["MapGet","JSON","endpoints"], code:"Lesson15/Program.cs", run:"dotnet run → localhost:5000/hello" },
+      { id:16, phase:3, title:"GET Endpoints", desc:"Query-string filters, models and proper HTTP status codes.", tags:["query params","models","404"], code:"Lesson16/Program.cs", run:"dotnet run" },
+      { id:17, phase:3, title:"POST Endpoints", desc:"Receive JSON in the request body, validate it, create new data.", tags:["MapPost","validation","201"], code:"Lesson17/Program.cs", run:"dotnet run" },
+      { id:18, phase:3, title:"PUT & DELETE", desc:"Complete the CRUD API — update and remove records.", tags:["MapPut","MapDelete","204"], code:"Lesson18/Program.cs", run:"dotnet run" },
+      { id:19, phase:3, title:"Connect API to SQL", desc:"Every endpoint backed by the real SQL Server database.", tags:["full CRUD","SqlClient"], code:"Lesson19/Program.cs", run:"dotnet run" },
+      { id:20, phase:3, title:"API Security", desc:"Protect endpoints with JWT login tokens and role-based access.", tags:["JWT","Authorization","roles"], code:"Lesson20/Program.cs", run:"dotnet run" },
+      // ---- Phase 4 ----
+      { id:21, phase:4, title:"HTML Basics", desc:"Your first webpage: headings, lists, tables, links and images.", tags:["html","tables","lists"], entry:"Lesson21/index.html" },
+      { id:22, phase:4, title:"Forms & Inputs", desc:"Login and registration forms with every input type.", tags:["form","input","select","textarea"], entry:"Lesson22/index.html" },
+      { id:23, phase:4, title:"CSS Styling", desc:"Selectors, the box model, flexbox, hover effects and CSS variables.", tags:["css","flexbox","variables"], entry:"Lesson23/index.html" },
+      { id:24, phase:4, title:"Responsive Design", desc:"Mobile-first layouts with media queries and fluid grids.", tags:["@media","mobile-first","grid"], entry:"Lesson24/index.html" },
+      { id:25, phase:4, title:"Fetch API", desc:"Call your C# API from plain HTML & JavaScript. (Run Lesson 19 first.)", tags:["fetch","async/await","JSON"], entry:"Lesson25/index.html" },
+      // ---- Phase 5 ----
+      { id:26, phase:5, title:"React Basics", desc:"Components and JSX — build reusable UI pieces.", tags:["component","JSX","props"], entry:"Lesson26/index.html" },
+      { id:27, phase:5, title:"Props & State", desc:"useState and props bring components to life with live data.", tags:["useState","props","render"], entry:"Lesson27/index.html" },
+      { id:28, phase:5, title:"Forms in React", desc:"Controlled inputs, live validation and submitting data.", tags:["controlled","onChange","validation"], entry:"Lesson28/index.html" },
+      { id:29, phase:5, title:"Fetch from API", desc:"useEffect to load data from your C# API into React.", tags:["useEffect","fetch","loading"], entry:"Lesson29/index.html" },
+      { id:30, phase:5, title:"React Router", desc:"Multiple pages in one app with client-side routing.", tags:["Routes","Link","useParams"], entry:"Lesson30/index.html" },
+      { id:31, phase:5, title:"Loading & Errors", desc:"Handle loading spinners, empty states and failures with retry.", tags:["loading","error","retry"], entry:"Lesson31/index.html" },
+      { id:32, phase:5, title:"Styling React", desc:"Inline styles, style objects, dynamic styles and a dark-mode toggle.", tags:["CSS-in-JS","dynamic","dark mode"], entry:"Lesson32/index.html" },
+      // ---- Phase 6 ----
+      { id:33, phase:6, title:"Project Setup", desc:"Wire React + C# API + SQL together with CORS.", tags:["CORS","architecture"], entry:"Lesson33/frontend/index.html", code:"Lesson33/api/Program.cs" },
+      { id:34, phase:6, title:"User Registration", desc:"Sign-up form that saves new users to the database.", tags:["register","hashing","Users table"], entry:"Lesson34/frontend/index.html", code:"Lesson34/api/Program.cs" },
+      { id:35, phase:6, title:"User Login", desc:"Authenticate with JWT and store the token in localStorage.", tags:["login","JWT","localStorage"], entry:"Lesson35/frontend/index.html", code:"Lesson35/api/Program.cs" },
+      { id:36, phase:6, title:"Dashboard", desc:"Stat cards, a grade chart and a top-3 podium from live data.", tags:["dashboard","stats","protected"], entry:"Lesson36/frontend/index.html", code:"Lesson36/api/Program.cs" },
+      { id:37, phase:6, title:"Full CRUD UI", desc:"Add, edit in place and delete with optimistic updates.", tags:["CRUD UI","optimistic","sort"], entry:"Lesson37/frontend/index.html", code:"Lesson37/api/Program.cs" },
+      { id:38, phase:6, title:"Search & Filter", desc:"Debounced live search, filters and pagination.", tags:["debounce","pagination","filter"], entry:"Lesson38/frontend/index.html", code:"Lesson38/api/Program.cs" },
+      { id:39, phase:6, title:"Deploy Backend", desc:"Publish the C# API and database to Railway.", tags:["Railway","env vars","deploy"], code:"Lesson39/README.md", run:"Follow the README" },
+      { id:40, phase:6, title:"Deploy Frontend", desc:"Host the finished React app on Vercel. Course complete!", tags:["Vercel","production","🎉"], entry:"Lesson40/frontend/index.html", code:"Lesson40/README.md" },
+    ];
+
+    const STORAGE_KEY = "chello-progress";
+
+    // ============================================================
+    // A single lesson card (props in, UI out — Lesson 26-27)
+    // ============================================================
+    function LessonCard({ lesson, done, onToggle }) {
+      return (
+        <div className={"card" + (done ? " done" : "")}>
+          <div className="card-num">Lesson {String(lesson.id).padStart(2, "0")}</div>
+          <h3>{lesson.title}</h3>
+          <p>{lesson.desc}</p>
+
+          <div className="tags">
+            {lesson.tags.map((t, i) => <span className="tag" key={i}>{t}</span>)}
+          </div>
+
+          {lesson.run && <div className="tag" style={{marginBottom:"10px"}}>▶ {lesson.run}</div>}
+
+          <div className="card-actions">
+            {lesson.entry
+              ? <a className="btn btn-open" href={lesson.entry} target="_blank" rel="noopener">Open Lesson ↗</a>
+              : <a className="btn btn-open" href={GITHUB + lesson.code} target="_blank" rel="noopener">View Code ↗</a>}
+
+            {lesson.entry && lesson.code &&
+              <a className="btn btn-code" href={GITHUB + lesson.code} target="_blank" rel="noopener">API Code</a>}
+
+            <button
+              className={"btn btn-check" + (done ? " checked" : "")}
+              onClick={() => onToggle(lesson.id)}
+              title={done ? "Mark as not done" : "Mark as complete"}>
+              {done ? "✓" : "○"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // The whole dashboard
+    // ============================================================
+    function App() {
+      // Theme persisted in localStorage (Lesson 32 + 35)
+      const [theme, setTheme] = useState(() => localStorage.getItem("chello-theme") || "dark");
+      // Completed lesson IDs, persisted (Lesson 35)
+      const [done, setDone] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+        catch { return []; }
+      });
+      const [search, setSearch] = useState("");        // controlled input (Lesson 28)
+      const [activePhase, setActivePhase] = useState(0); // 0 = all
+
+      // Save side-effects whenever state changes (Lesson 29 useEffect)
+      useEffect(() => { document.body.setAttribute("data-theme", theme); localStorage.setItem("chello-theme", theme); }, [theme]);
+      useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(done)); }, [done]);
+
+      const toggle = (id) =>
+        setDone(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+      // Filter by search + phase (Lesson 38 logic, done client-side here)
+      const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        return LESSONS.filter(l => {
+          const matchPhase = activePhase === 0 || l.phase === activePhase;
+          const matchText = !q ||
+            l.title.toLowerCase().includes(q) ||
+            l.desc.toLowerCase().includes(q) ||
+            l.tags.some(t => t.toLowerCase().includes(q));
+          return matchPhase && matchText;
+        });
+      }, [search, activePhase]);
+
+      const pct = Math.round((done.length / LESSONS.length) * 100);
+
+      return (
+        <React.Fragment>
+          <header>
+            <button className="theme-toggle" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
+              {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+            </button>
+            <h1>Chello</h1>
+            <p>Your interactive journey from Hello World to a deployed full-stack app</p>
+          </header>
+
+          <div className="container">
+
+            {/* Stat cards */}
+            <div className="stats">
+              <div className="stat"><div className="num">40</div><div className="lbl">Lessons</div></div>
+              <div className="stat"><div className="num">6</div><div className="lbl">Phases</div></div>
+              <div className="stat"><div className="num">{done.length}</div><div className="lbl">Completed</div></div>
+              <div className="stat"><div className="num">{pct}%</div><div className="lbl">Progress</div></div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="progress-wrap">
+              <div className="progress-head">
+                <strong>Your Progress</strong>
+                <span>{done.length} of {LESSONS.length} lessons complete</span>
+              </div>
+              <div className="bar"><div className="bar-fill" style={{ width: pct + "%" }}></div></div>
+              {done.length > 0 &&
+                <button className="reset-btn" onClick={() => { if (confirm("Reset all progress?")) setDone([]); }}>
+                  Reset progress
+                </button>}
+            </div>
+
+            {/* Controls */}
+            <div className="controls">
+              <input
+                className="search"
+                placeholder="🔍 Search lessons, topics or keywords…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              <div className="filter-chips">
+                <span className={"chip" + (activePhase === 0 ? " active" : "")} onClick={() => setActivePhase(0)}>All</span>
+                {PHASES.map(p =>
+                  <span key={p.id}
+                        className={"chip" + (activePhase === p.id ? " active" : "")}
+                        onClick={() => setActivePhase(p.id)}>
+                    Phase {p.id}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Phase sections */}
+            {filtered.length === 0 && <div className="empty">No lessons match “{search}”. Try another search.</div>}
+
+            {PHASES.map(phase => {
+              const lessons = filtered.filter(l => l.phase === phase.id);
+              if (lessons.length === 0) return null;
+              const phaseDone = LESSONS.filter(l => l.phase === phase.id && done.includes(l.id)).length;
+              const phaseTotal = LESSONS.filter(l => l.phase === phase.id).length;
+              return (
+                <div className="phase" key={phase.id}>
+                  <div className="phase-title">
+                    <span className="phase-badge" style={{ background: phase.color }}>{phase.id}</span>
+                    {phase.name}
+                    <span style={{ fontSize: ".85rem", color: "var(--text-dim)", fontWeight: 400 }}>
+                      ({phaseDone}/{phaseTotal} done)
+                    </span>
+                  </div>
+                  <div className="phase-sub">{phase.sub}</div>
+                  <div className="grid">
+                    {lessons.map(l =>
+                      <LessonCard key={l.id} lesson={l} done={done.includes(l.id)} onToggle={toggle} />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <footer>
+            Built with the very skills it teaches · React + localStorage + responsive CSS<br/>
+            <a href="https://github.com/rickysoo/Chello" target="_blank" rel="noopener">github.com/rickysoo/Chello</a>
+            &nbsp;·&nbsp; Your progress is saved in this browser
+          </footer>
+        </React.Fragment>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
