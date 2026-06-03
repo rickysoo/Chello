@@ -1,0 +1,17 @@
+# Build output
+bin/
+obj/
+
+# VS Code
+.vscode/
+
+# Claude Code
+.claude/
+
+# User secrets
+*.user
+*.suo
+
+# OS files
+.DS_Store
+Thumbs.db
