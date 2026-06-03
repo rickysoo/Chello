@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 22: Forms & Inputs</title>
+
+  <!--
+    ============================================================
+    LESSON 22: HTML FORMS & INPUTS
+    ============================================================
+
+    What is an HTML Form?
+    ---------------------
+    A form is how a webpage collects information from the user.
+    Think of it like a paper form you fill out at the doctor's office —
+    except this one is on a screen, and when you click "Submit",
+    the data is sent to a server (a computer somewhere on the internet).
+
+    How does a form work?
+    ---------------------
+    1. The user fills in the fields (text boxes, dropdowns, etc.)
+    2. The user clicks the Submit button
+    3. The browser sends the data to the URL specified in the "action" attribute
+    4. The server processes the data and sends back a response
+
+    Key HTML elements:
+    ------------------
+    <form>       - The container for all form fields
+    <input>      - A single-line entry field (text, password, email, number, etc.)
+    <label>      - A text label that describes an input field
+    <select>     - A dropdown menu
+    <option>     - One choice inside a <select> dropdown
+    <textarea>   - A multi-line text box (for longer text)
+    <button>     - A clickable button (use type="submit" to send the form)
+    <fieldset>   - Groups related fields visually
+    <legend>     - The title for a <fieldset>
+
+    Important input types:
+    ----------------------
+    type="text"      - Plain text (default)
+    type="password"  - Hides the characters as the user types
+    type="email"     - Validates that the value looks like an email address
+    type="number"    - Only allows numeric input
+    type="checkbox"  - A box the user can tick (on/off)
+    type="radio"     - One choice from a group (only one can be selected at a time)
+
+    Note on "name" attribute:
+    -------------------------
+    Every input should have a "name" attribute.
+    This is the key that gets sent to the server, e.g.  username=john
+
+    Note on "for" / "id" pairing:
+    ------------------------------
+    A <label for="xyz"> is linked to <input id="xyz">.
+    Clicking the label automatically focuses the input — great for usability.
+
+    ============================================================
+  -->
+
+  <style>
+    /* --- Page base styles --- */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+      margin: 0;
+      padding: 30px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1a2b4a;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
+      font-size: 15px;
+    }
+
+    /* --- Card wrapper for each form --- */
+    .form-card {
+      background: #ffffff;
+      border: 1px solid #dde3ed;
+      border-radius: 8px;
+      padding: 32px 36px;
+      max-width: 520px;
+      margin: 0 auto 40px auto;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    }
+
+    .form-card h2 {
+      margin-top: 0;
+      margin-bottom: 24px;
+      color: #1a2b4a;
+      font-size: 20px;
+      border-bottom: 2px solid #e8ecf3;
+      padding-bottom: 12px;
+    }
+
+    /* --- Label & input layout --- */
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 5px;
+      color: #444;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #c5cdd8;
+      border-radius: 5px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background-color: #fafbfd;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    input[type="email"]:focus,
+    input[type="number"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #3a6fd8;
+      background-color: #fff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* --- Checkbox & radio inline style --- */
+    .check-group,
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .check-group label,
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: normal;
+      cursor: pointer;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    /* --- Submit button --- */
+    button[type="submit"] {
+      width: 100%;
+      padding: 11px;
+      background-color: #1a2b4a;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background-color 0.2s;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #3a6fd8;
+    }
+
+    /* --- Fieldset inside registration form --- */
+    fieldset {
+      border: 1px solid #dde3ed;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 18px;
+    }
+
+    legend {
+      font-weight: bold;
+      font-size: 13px;
+      color: #3a6fd8;
+      padding: 0 6px;
+    }
+
+    /* --- Bottom note --- */
+    .note {
+      max-width: 520px;
+      margin: 0 auto 20px auto;
+      background: #fffbea;
+      border: 1px solid #f0d060;
+      border-radius: 6px;
+      padding: 14px 20px;
+      font-size: 14px;
+      color: #7a5c00;
+    }
+
+    .note strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Lesson 22: Forms &amp; Inputs</h1>
+  <p class="subtitle">Learn how to collect information from users using HTML forms.</p>
+
+
+  <!-- ============================================================
+       FORM 1: LOGIN FORM
+       ============================================================
+       Purpose: A simple login screen.
+       Fields:
+         - username (type="text")   — plain text, user types their name
+         - password (type="password") — characters are hidden as you type
+         - submit button            — sends the form
+       ============================================================ -->
+
+  <div class="form-card">
+    <h2>Form 1: Login</h2>
+
+    <!--
+      <form> attributes:
+        action  - where the data is sent (URL). "#" means "stay on this page" for now.
+        method  - "post" sends data securely in the request body (preferred for login).
+                  "get"  appends data to the URL (visible in the address bar).
+    -->
+    <form action="#" method="post">
+
+      <!-- Username field -->
+      <div class="field">
+        <!-- The "for" value must match the "id" of the input below -->
+        <label for="username">Username</label>
+        <!--
+          type="text"   - a regular single-line text box
+          id="username" - links to the label above
+          name="username" - the key sent to the server
+          placeholder   - grey hint text shown before the user types
+          required      - the browser will block submit if this is empty
+        -->
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Enter your username"
+          required
+        />
+      </div>
+
+      <!-- Password field -->
+      <div class="field">
+        <label for="password">Password</label>
+        <!--
+          type="password" - same as text but characters are shown as dots
+        -->
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter your password"
+          required
+        />
+      </div>
+
+      <!-- Submit button -->
+      <!--
+        type="submit" - clicking this sends the form data to the action URL
+      -->
+      <button type="submit">Log In</button>
+
+    </form>
+  </div>
+
+
+  <!-- ============================================================
+       FORM 2: STUDENT REGISTRATION FORM
+       ============================================================
+       Purpose: Collect detailed information about a new student.
+       Fields:
+         - first name  (type="text")
+         - last name   (type="text")
+         - email       (type="email")
+         - score       (type="number")
+         - grade       (<select> dropdown)
+         - notes       (<textarea>)
+         - interests   (checkboxes — multiple choices allowed)
+         - gender      (radio buttons — only ONE choice allowed)
+         - submit button
+       ============================================================ -->
+
+  <div class="form-card">
+    <h2>Form 2: Student Registration</h2>
+
+    <form action="#" method="post">
+
+      <!-- ---- Personal Details section (grouped with fieldset) ---- -->
+      <fieldset>
+        <legend>Personal Details</legend>
+
+        <!-- First Name -->
+        <div class="field">
+          <label for="firstName">First Name</label>
+          <!--
+            autocomplete="given-name" - tells the browser this is a first name
+            so it can offer autofill suggestions
+          -->
+          <input
+            type="text"
+            id="firstName"
+            name="firstName"
+            placeholder="e.g. Maria"
+            autocomplete="given-name"
+            required
+          />
+        </div>
+
+        <!-- Last Name -->
+        <div class="field">
+          <label for="lastName">Last Name</label>
+          <input
+            type="text"
+            id="lastName"
+            name="lastName"
+            placeholder="e.g. Santos"
+            autocomplete="family-name"
+            required
+          />
+        </div>
+
+        <!-- Email -->
+        <div class="field">
+          <label for="email">Email Address</label>
+          <!--
+            type="email" - the browser checks that the value contains "@" and a domain
+            before allowing the form to submit
+          -->
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="e.g. maria@example.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+
+        <!-- Gender — radio buttons (only one can be selected) -->
+        <div class="field">
+          <label>Gender</label>
+          <!--
+            type="radio" — all buttons in the same group share the same "name".
+            Only one radio button with name="gender" can be selected at a time.
+            The "value" is what gets sent to the server.
+          -->
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="gender" value="female" /> Female
+            </label>
+            <label>
+              <input type="radio" name="gender" value="male" /> Male
+            </label>
+            <label>
+              <input type="radio" name="gender" value="other" /> Prefer not to say
+            </label>
+          </div>
+        </div>
+
+      </fieldset>
+
+      <!-- ---- Academic Details section ---- -->
+      <fieldset>
+        <legend>Academic Details</legend>
+
+        <!-- Score (number input) -->
+        <div class="field">
+          <label for="score">Score (0 – 100)</label>
+          <!--
+            type="number" - only accepts numeric input
+            min / max     - the browser enforces valid range
+            step="1"      - only whole numbers allowed
+          -->
+          <input
+            type="number"
+            id="score"
+            name="score"
+            min="0"
+            max="100"
+            step="1"
+            placeholder="e.g. 85"
+          />
+        </div>
+
+        <!-- Grade (select dropdown) -->
+        <div class="field">
+          <label for="grade">Grade</label>
+          <!--
+            <select> creates a dropdown menu.
+            Each <option> is one item in the list.
+            The "value" attribute is what gets sent to the server.
+            The text between the tags is what the user sees.
+            selected  - marks the default choice shown when the page loads
+          -->
+          <select id="grade" name="grade">
+            <option value="" selected disabled>-- Select a grade --</option>
+            <option value="A">A — Excellent</option>
+            <option value="B">B — Good</option>
+            <option value="C">C — Average</option>
+            <option value="D">D — Below Average</option>
+            <option value="F">F — Fail</option>
+          </select>
+        </div>
+
+        <!-- Interests — checkboxes (multiple can be selected) -->
+        <div class="field">
+          <label>Subjects of Interest</label>
+          <!--
+            type="checkbox" - each box is independent (unlike radio buttons).
+            Multiple checkboxes can be ticked at the same time.
+            checked  - makes the box ticked by default.
+          -->
+          <div class="check-group">
+            <label>
+              <input type="checkbox" name="interest" value="math" /> Mathematics
+            </label>
+            <label>
+              <input type="checkbox" name="interest" value="science" checked /> Science
+            </label>
+            <label>
+              <input type="checkbox" name="interest" value="english" /> English
+            </label>
+            <label>
+              <input type="checkbox" name="interest" value="arts" /> Arts
+            </label>
+          </div>
+        </div>
+
+        <!-- Notes (textarea for longer text) -->
+        <div class="field">
+          <label for="notes">Additional Notes</label>
+          <!--
+            <textarea> is used when you need more than one line of text.
+            rows / cols  - set the default visible size (CSS can override this).
+            There is no "value" attribute — the default text goes between the tags.
+          -->
+          <textarea
+            id="notes"
+            name="notes"
+            rows="4"
+            placeholder="Any extra information about this student..."
+          ></textarea>
+        </div>
+
+      </fieldset>
+
+      <!-- Submit button -->
+      <button type="submit">Register Student</button>
+
+    </form>
+  </div>
+
+
+  <!-- ============================================================
+       BOTTOM NOTE
+       ============================================================ -->
+  <div class="note">
+    <strong>Coming up in Lesson 25</strong>
+    Right now these forms do not actually save any data — clicking Submit just reloads
+    the page. In <strong>Lesson 25</strong> we connect this form to the real API using
+    JavaScript's <code>fetch()</code>, so the data is sent to a server and stored in a
+    database.
+  </div>
+
+
+</body>
+</html>

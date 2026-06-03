@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 25: Fetch API — Calling your C# API from HTML</title>
+  <style>
+    /* ============================================================
+       PAGE LAYOUT & BASE STYLES
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #1a365d;
+      color: #fff;
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+    header h1 { font-size: 1.8rem; margin-bottom: 0.4rem; }
+    header p  { font-size: 1rem; opacity: 0.85; }
+
+    .lesson-badge {
+      display: inline-block;
+      background: #63b3ed;
+      color: #1a365d;
+      font-weight: 700;
+      font-size: 0.78rem;
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      margin-bottom: 0.7rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    main {
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1rem 4rem;
+    }
+
+    /* ---- concept box ---- */
+    .concept {
+      background: #ebf8ff;
+      border-left: 5px solid #3182ce;
+      border-radius: 6px;
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 2rem;
+    }
+    .concept h2 { color: #2b6cb0; font-size: 1.15rem; margin-bottom: 0.6rem; }
+    .concept p  { font-size: 0.95rem; margin-bottom: 0.5rem; }
+    .concept code {
+      background: #bee3f8;
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    /* ---- example cards ---- */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+      margin-bottom: 1.8rem;
+    }
+    .card h3 {
+      font-size: 1.05rem;
+      color: #2d3748;
+      margin-bottom: 0.3rem;
+    }
+    .card .subtitle {
+      font-size: 0.82rem;
+      color: #718096;
+      margin-bottom: 1rem;
+    }
+
+    /* ---- form controls ---- */
+    .row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: 0.8rem; }
+
+    label { font-size: 0.85rem; color: #4a5568; display: block; margin-bottom: 0.25rem; }
+
+    input[type="text"],
+    input[type="number"] {
+      border: 1.5px solid #cbd5e0;
+      border-radius: 6px;
+      padding: 0.45rem 0.8rem;
+      font-size: 0.95rem;
+      width: 120px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #3182ce; }
+
+    button {
+      background: #3182ce;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.48rem 1.1rem;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover  { background: #2b6cb0; }
+    button:active { transform: scale(0.97); }
+    button.danger { background: #e53e3e; }
+    button.danger:hover { background: #c53030; }
+
+    /* ---- output boxes ---- */
+    .output {
+      min-height: 48px;
+      border-radius: 6px;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.88rem;
+      margin-top: 0.6rem;
+      transition: background 0.3s;
+    }
+    .output.idle    { background: #f7fafc; color: #a0aec0; font-style: italic; }
+    .output.loading { background: #fffbeb; color: #b7791f; }
+    .output.success { background: #f0fff4; color: #276749; }
+    .output.error   { background: #fff5f5; color: #c53030; }
+
+    /* ---- table inside output ---- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-top: 0.4rem;
+    }
+    th {
+      background: #ebf8ff;
+      color: #2b6cb0;
+      text-align: left;
+      padding: 0.45rem 0.7rem;
+      border-bottom: 2px solid #bee3f8;
+    }
+    td {
+      padding: 0.4rem 0.7rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7fafc; }
+
+    /* ---- code snippet ---- */
+    pre {
+      background: #1a202c;
+      color: #e2e8f0;
+      border-radius: 7px;
+      padding: 1rem 1.2rem;
+      font-size: 0.82rem;
+      overflow-x: auto;
+      margin: 0.8rem 0 0;
+      line-height: 1.55;
+    }
+    .kw  { color: #63b3ed; }   /* keyword   */
+    .fn  { color: #68d391; }   /* function  */
+    .str { color: #fbd38d; }   /* string    */
+    .cm  { color: #718096; }   /* comment   */
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #a0aec0;
+      padding: 2rem 0 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     LESSON 25: FETCH API — CALLING YOUR C# API FROM HTML
+     ================================================================
+
+     WHAT IS fetch()?
+     ----------------
+     fetch() is a built-in JavaScript function that lets a web page
+     talk to a server over HTTP — without refreshing the page.
+
+     Think of it like a waiter in a restaurant:
+       - You (the browser) make a request  →  "I want the student list"
+       - The waiter (fetch) goes to the kitchen (your C# API)
+       - The kitchen prepares the data and sends it back
+       - The waiter brings it to your table (updates the page)
+
+     WHY async/await?
+     ----------------
+     Fetching data takes time (network round-trip). Instead of freezing
+     the browser while waiting, JavaScript uses:
+
+       async function doSomething() {
+           const response = await fetch(url);  // wait here, but don't freeze
+           const data     = await response.json(); // wait for JSON parsing
+           // now use data
+       }
+
+     async  → marks a function as "this may need to wait"
+     await  → "pause HERE until this promise resolves, then continue"
+
+     WHAT IS JSON?
+     -------------
+     JSON (JavaScript Object Notation) is the language APIs use to swap
+     data. It looks like JavaScript objects:
+         { "id": 1, "name": "Alice", "grade": "A" }
+
+     response.json() converts the raw HTTP text into a real JS object
+     you can work with.
+
+     ERROR HANDLING
+     --------------
+     Two things can go wrong:
+       1. Network error (server is down)  → caught by try/catch
+       2. HTTP error (404, 500, etc.)    → response.ok is false
+
+     Always check BOTH.
+
+     API BEING CALLED: http://localhost:5000
+     ----------------------------------------
+     Make sure your Lesson 19 C# API is running before clicking buttons:
+         cd Lesson19
+         dotnet run
+     ================================================================ -->
+
+<header>
+  <div class="lesson-badge">Lesson 25</div>
+  <h1>Fetch API — Calling your C# API from HTML</h1>
+  <p>Use <code>fetch()</code>, <code>async/await</code>, and JSON to talk to your Lesson 19 C# API live from this page.</p>
+</header>
+
+<main>
+
+  <!-- ── CONCEPT RECAP ─────────────────────────────────────────── -->
+  <div class="concept">
+    <h2>How fetch() works in 3 steps</h2>
+    <p><strong>Step 1 — Make the request:</strong> <code>const response = await fetch(url, options)</code></p>
+    <p><strong>Step 2 — Check the result:</strong> <code>if (!response.ok) throw new Error(...)</code></p>
+    <p><strong>Step 3 — Read the JSON body:</strong> <code>const data = await response.json()</code></p>
+    <p>Wrap everything in <code>try { } catch(err) { }</code> to handle network failures gracefully.</p>
+  </div>
+
+  <!-- ================================================================
+       EXAMPLE 1 — GET /api/students  (Load All Students)
+       ================================================================ -->
+  <div class="card">
+    <h3>Example 1 — Load All Students</h3>
+    <p class="subtitle">HTTP Method: GET &nbsp;|&nbsp; Endpoint: <code>GET /api/students</code></p>
+
+    <!-- The button triggers the async function below -->
+    <button onclick="loadAllStudents()">Load All Students</button>
+
+    <div id="output1" class="output idle">Results will appear here…</div>
+
+    <!-- CODE SNIPPET shown for learning -->
+    <pre><span class="cm">// Step 1: mark the function async so we can use await</span>
+<span class="kw">async function</span> <span class="fn">loadAllStudents</span>() {
+  <span class="kw">try</span> {
+    <span class="cm">// Step 2: fetch sends a GET request (default method)</span>
+    <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'http://localhost:5000/api/students'</span>);
+
+    <span class="cm">// Step 3: if the server returned an error code, throw</span>
+    <span class="kw">if</span> (!response.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`HTTP error: ${response.status}`</span>);
+
+    <span class="cm">// Step 4: parse the JSON body into a JS array</span>
+    <span class="kw">const</span> students = <span class="kw">await</span> response.<span class="fn">json</span>();
+
+    <span class="cm">// Step 5: display the data</span>
+    <span class="fn">renderTable</span>(students);
+  } <span class="kw">catch</span> (err) {
+    <span class="fn">showError</span>(<span class="str">'output1'</span>, err.message);
+  }
+}</pre>
+  </div>
+
+  <!-- ================================================================
+       EXAMPLE 2 — GET /api/students/{id}  (Find One Student)
+       ================================================================ -->
+  <div class="card">
+    <h3>Example 2 — Find a Student by ID</h3>
+    <p class="subtitle">HTTP Method: GET &nbsp;|&nbsp; Endpoint: <code>GET /api/students/{id}</code></p>
+
+    <div class="row">
+      <div>
+        <label for="findId">Student ID</label>
+        <input type="number" id="findId" placeholder="e.g. 1" min="1" />
+      </div>
+      <button onclick="findStudent()">Find Student</button>
+    </div>
+
+    <div id="output2" class="output idle">Enter an ID and click Find Student…</div>
+
+    <pre><span class="kw">async function</span> <span class="fn">findStudent</span>() {
+  <span class="cm">// Read the ID the user typed</span>
+  <span class="kw">const</span> id = document.<span class="fn">getElementById</span>(<span class="str">'findId'</span>).value;
+  <span class="kw">if</span> (!id) { <span class="fn">showError</span>(<span class="str">'output2'</span>, <span class="str">'Please enter an ID'</span>); <span class="kw">return</span>; }
+
+  <span class="kw">try</span> {
+    <span class="cm">// Template literals let us insert the id into the URL</span>
+    <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">`http://localhost:5000/api/students/${id}`</span>);
+
+    <span class="kw">if</span> (response.status === <span class="str">404</span>) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`No student with ID ${id}`</span>);
+    <span class="kw">if</span> (!response.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`HTTP error: ${response.status}`</span>);
+
+    <span class="kw">const</span> student = <span class="kw">await</span> response.<span class="fn">json</span>();
+    <span class="fn">renderTable</span>([student], <span class="str">'output2'</span>);
+  } <span class="kw">catch</span> (err) {
+    <span class="fn">showError</span>(<span class="str">'output2'</span>, err.message);
+  }
+}</pre>
+  </div>
+
+  <!-- ================================================================
+       EXAMPLE 3 — POST /api/students  (Add a New Student)
+       ================================================================ -->
+  <div class="card">
+    <h3>Example 3 — Add a New Student</h3>
+    <p class="subtitle">HTTP Method: POST &nbsp;|&nbsp; Endpoint: <code>POST /api/students</code></p>
+
+    <div class="row">
+      <div>
+        <label for="newName">Name</label>
+        <input type="text" id="newName" placeholder="e.g. Alice" style="width:140px" />
+      </div>
+      <div>
+        <label for="newGrade">Grade</label>
+        <input type="text" id="newGrade" placeholder="e.g. A" style="width:80px" />
+      </div>
+      <button onclick="addStudent()">Add Student</button>
+    </div>
+
+    <div id="output3" class="output idle">Fill in the form and click Add Student…</div>
+
+    <pre><span class="kw">async function</span> <span class="fn">addStudent</span>() {
+  <span class="kw">const</span> name  = document.<span class="fn">getElementById</span>(<span class="str">'newName'</span>).value.trim();
+  <span class="kw">const</span> grade = document.<span class="fn">getElementById</span>(<span class="str">'newGrade'</span>).value.trim();
+  <span class="kw">if</span> (!name || !grade) { <span class="fn">showError</span>(<span class="str">'output3'</span>, <span class="str">'Name and grade are required'</span>); <span class="kw">return</span>; }
+
+  <span class="kw">try</span> {
+    <span class="cm">// POST needs extra options: method, headers, and a JSON body</span>
+    <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'http://localhost:5000/api/students'</span>, {
+      method:  <span class="str">'POST'</span>,
+      headers: { <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span> },
+      <span class="cm">// JSON.stringify() converts a JS object into a JSON string</span>
+      body:    <span class="fn">JSON.stringify</span>({ name, grade })
+    });
+
+    <span class="kw">if</span> (!response.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`HTTP error: ${response.status}`</span>);
+
+    <span class="kw">const</span> created = <span class="kw">await</span> response.<span class="fn">json</span>();
+    <span class="fn">renderTable</span>([created], <span class="str">'output3'</span>);
+  } <span class="kw">catch</span> (err) {
+    <span class="fn">showError</span>(<span class="str">'output3'</span>, err.message);
+  }
+}</pre>
+  </div>
+
+  <!-- ================================================================
+       EXAMPLE 4 — DELETE /api/students/{id}  (Remove a Student)
+       ================================================================ -->
+  <div class="card">
+    <h3>Example 4 — Delete a Student</h3>
+    <p class="subtitle">HTTP Method: DELETE &nbsp;|&nbsp; Endpoint: <code>DELETE /api/students/{id}</code></p>
+
+    <div class="row">
+      <div>
+        <label for="deleteId">Student ID</label>
+        <input type="number" id="deleteId" placeholder="e.g. 2" min="1" />
+      </div>
+      <button class="danger" onclick="deleteStudent()">Delete Student</button>
+    </div>
+
+    <div id="output4" class="output idle">Enter an ID and click Delete Student…</div>
+
+    <pre><span class="kw">async function</span> <span class="fn">deleteStudent</span>() {
+  <span class="kw">const</span> id = document.<span class="fn">getElementById</span>(<span class="str">'deleteId'</span>).value;
+  <span class="kw">if</span> (!id) { <span class="fn">showError</span>(<span class="str">'output4'</span>, <span class="str">'Please enter an ID'</span>); <span class="kw">return</span>; }
+
+  <span class="kw">try</span> {
+    <span class="cm">// DELETE only needs the method changed — no body required</span>
+    <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">`http://localhost:5000/api/students/${id}`</span>, {
+      method: <span class="str">'DELETE'</span>
+    });
+
+    <span class="kw">if</span> (response.status === <span class="str">404</span>) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`No student with ID ${id}`</span>);
+    <span class="kw">if</span> (!response.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">`HTTP error: ${response.status}`</span>);
+
+    <span class="cm">// 204 No Content means success but no body to parse</span>
+    <span class="fn">showSuccess</span>(<span class="str">'output4'</span>, <span class="str">`Student ID ${id} was deleted successfully.`</span>);
+  } <span class="kw">catch</span> (err) {
+    <span class="fn">showError</span>(<span class="str">'output4'</span>, err.message);
+  }
+}</pre>
+  </div>
+
+</main>
+
+<footer>
+  Chello C# Course &mdash; Lesson 25 &nbsp;|&nbsp; Make sure <code>dotnet run</code> is running in Lesson19 before testing
+</footer>
+
+<script>
+  // ================================================================
+  // HELPER FUNCTIONS
+  // These are shared utilities used by all four examples.
+  // ================================================================
+
+  /**
+   * showLoading(outputId)
+   * Updates an output box to show a "loading" spinner message.
+   * Called right before every fetch() so the user knows something
+   * is happening.
+   */
+  function showLoading(outputId) {
+    const el = document.getElementById(outputId);
+    el.className = 'output loading';
+    el.innerHTML = '⏳ Loading…';
+  }
+
+  /**
+   * showError(outputId, message)
+   * Updates an output box to show a red error message.
+   * Called inside catch() blocks.
+   */
+  function showError(outputId, message) {
+    const el = document.getElementById(outputId);
+    el.className = 'output error';
+    el.innerHTML = `⚠️ <strong>Error:</strong> ${message}`;
+  }
+
+  /**
+   * showSuccess(outputId, message)
+   * Updates an output box to show a green success message.
+   * Used when there is no table to render (e.g. after DELETE).
+   */
+  function showSuccess(outputId, message) {
+    const el = document.getElementById(outputId);
+    el.className = 'output success';
+    el.innerHTML = `✅ ${message}`;
+  }
+
+  /**
+   * renderTable(students, outputId)
+   * Converts an array of student objects into an HTML table
+   * and injects it into the output box.
+   *
+   * Each student looks like: { id: 1, name: "Alice", grade: "A" }
+   */
+  function renderTable(students, outputId = 'output1') {
+    const el = document.getElementById(outputId);
+
+    if (!students || students.length === 0) {
+      el.className = 'output idle';
+      el.innerHTML = 'No students found.';
+      return;
+    }
+
+    // Build the table header from the object keys of the first student
+    const keys = Object.keys(students[0]);
+    let html = '<table><thead><tr>';
+    keys.forEach(k => {
+      // Capitalise first letter for display
+      html += `<th>${k.charAt(0).toUpperCase() + k.slice(1)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    // Build one row per student
+    students.forEach(s => {
+      html += '<tr>';
+      keys.forEach(k => { html += `<td>${s[k]}</td>`; });
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    el.className = 'output success';
+    el.innerHTML = html;
+  }
+
+  // ================================================================
+  // EXAMPLE 1 — GET all students
+  // ================================================================
+  async function loadAllStudents() {
+    showLoading('output1');
+
+    try {
+      // fetch() with no options = GET request
+      const response = await fetch('http://localhost:5000/api/students');
+
+      // response.ok is true for status codes 200-299
+      if (!response.ok) throw new Error(`Server returned ${response.status}`);
+
+      // response.json() reads the body and parses it from JSON text
+      // into a real JavaScript array/object
+      const students = await response.json();
+
+      renderTable(students, 'output1');
+    } catch (err) {
+      // Two reasons we land here:
+      //   1. Network error (API server not running)
+      //   2. We threw manually above due to a bad status code
+      showError('output1', err.message);
+    }
+  }
+
+  // ================================================================
+  // EXAMPLE 2 — GET one student by ID
+  // ================================================================
+  async function findStudent() {
+    const id = document.getElementById('findId').value.trim();
+    if (!id) { showError('output2', 'Please enter a student ID.'); return; }
+
+    showLoading('output2');
+
+    try {
+      // Template literal inserts the id variable into the URL string
+      const response = await fetch(`http://localhost:5000/api/students/${id}`);
+
+      // 404 means "not found" — give a friendly message
+      if (response.status === 404) throw new Error(`No student found with ID ${id}.`);
+      if (!response.ok)            throw new Error(`Server returned ${response.status}.`);
+
+      const student = await response.json();
+      renderTable([student], 'output2'); // wrap in array so renderTable works
+    } catch (err) {
+      showError('output2', err.message);
+    }
+  }
+
+  // ================================================================
+  // EXAMPLE 3 — POST a new student
+  // ================================================================
+  async function addStudent() {
+    const name  = document.getElementById('newName').value.trim();
+    const grade = document.getElementById('newGrade').value.trim();
+
+    if (!name)  { showError('output3', 'Please enter a name.'); return; }
+    if (!grade) { showError('output3', 'Please enter a grade.'); return; }
+
+    showLoading('output3');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/students', {
+        method: 'POST',
+
+        // Tell the server we are sending JSON, not a form
+        headers: { 'Content-Type': 'application/json' },
+
+        // JSON.stringify converts { name: "Alice", grade: "A" }
+        // into the string '{"name":"Alice","grade":"A"}'
+        // which is what the HTTP body must contain
+        body: JSON.stringify({ name, grade })
+      });
+
+      if (!response.ok) throw new Error(`Server returned ${response.status}.`);
+
+      // The API returns the created student (with its new ID)
+      const created = await response.json();
+      renderTable([created], 'output3');
+    } catch (err) {
+      showError('output3', err.message);
+    }
+  }
+
+  // ================================================================
+  // EXAMPLE 4 — DELETE a student by ID
+  // ================================================================
+  async function deleteStudent() {
+    const id = document.getElementById('deleteId').value.trim();
+    if (!id) { showError('output4', 'Please enter a student ID.'); return; }
+
+    showLoading('output4');
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/students/${id}`, {
+        method: 'DELETE' // only change needed for DELETE requests
+      });
+
+      if (response.status === 404) throw new Error(`No student found with ID ${id}.`);
+      if (!response.ok)            throw new Error(`Server returned ${response.status}.`);
+
+      // DELETE typically returns 204 No Content — no body to parse
+      showSuccess('output4', `Student ID ${id} was deleted successfully.`);
+    } catch (err) {
+      showError('output4', err.message);
+    }
+  }
+</script>
+
+</body>
+</html>

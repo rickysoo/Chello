@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 34: User Registration</title>
+
+  <!--
+    React via CDN — no build tools needed.
+    We load three scripts:
+      1. react          — the React core library
+      2. react-dom      — tools for rendering React into the browser
+      3. babel          — transforms JSX syntax so browsers can run it
+    This is great for learning. In production you would use Vite or Create React App.
+  -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* ---- Base styles ---- */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* ---- Card container ---- */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    }
+
+    .card-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+
+    .card-subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 28px;
+    }
+
+    /* ---- Form fields ---- */
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #1a1a2e;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: #4f46e5;
+    }
+
+    /* Red border when there is a validation error for that field */
+    input.has-error {
+      border-color: #ef4444;
+    }
+
+    /* Green border when the field passes validation */
+    input.is-valid {
+      border-color: #22c55e;
+    }
+
+    /* Small red error message below each field */
+    .field-error {
+      font-size: 0.78rem;
+      color: #ef4444;
+      margin-top: 5px;
+    }
+
+    /* ---- Submit button ---- */
+    .btn-submit {
+      width: 100%;
+      padding: 12px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: #4338ca;
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ---- Alert banners ---- */
+    .alert {
+      padding: 14px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .alert-success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    /* ---- Password strength bar ---- */
+    .strength-bar-wrap {
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .strength-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s, background 0.3s;
+    }
+
+    .strength-label {
+      font-size: 0.75rem;
+      margin-top: 4px;
+    }
+
+    /* ---- User list ---- */
+    .users-section {
+      margin-top: 32px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 24px;
+    }
+
+    .users-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 14px;
+    }
+
+    .user-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: #f9fafb;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+    }
+
+    .user-name { font-weight: 600; color: #1a1a2e; }
+    .user-email { color: #555; }
+    .user-date { color: #888; font-size: 0.78rem; }
+
+    .btn-refresh {
+      background: none;
+      border: 1.5px solid #4f46e5;
+      color: #4f46e5;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .btn-refresh:hover { background: #eef2ff; }
+  </style>
+</head>
+<body>
+
+  <!-- React will render into this div -->
+  <div id="root"></div>
+
+  <!--
+    type="text/babel" tells Babel to transform this script.
+    This lets us write JSX (HTML-like syntax inside JavaScript).
+    The browser cannot understand JSX natively — Babel converts
+    it to regular JavaScript before it runs.
+  -->
+  <script type="text/babel">
+
+    // ============================================================
+    // CONSTANTS
+    // ============================================================
+    // The base URL of our API. Change this if your API runs on
+    // a different port.
+    const API_BASE = "http://localhost:5034";
+
+    // ============================================================
+    // HELPER: Calculate password strength
+    // ============================================================
+    // Returns an object with:
+    //   score: 0-4 (0 = very weak, 4 = strong)
+    //   label: human-readable string
+    //   color: CSS color for the strength bar
+    // ============================================================
+    function getPasswordStrength(password) {
+      if (!password) return { score: 0, label: "", color: "#e5e7eb" };
+
+      let score = 0;
+      if (password.length >= 6)  score++;    // At least 6 chars
+      if (password.length >= 10) score++;    // At least 10 chars
+      if (/[A-Z]/.test(password)) score++;  // Has uppercase letter
+      if (/[0-9]/.test(password)) score++;  // Has a number
+      if (/[^A-Za-z0-9]/.test(password)) score++; // Has special char
+
+      const levels = [
+        { label: "Very Weak", color: "#ef4444" },
+        { label: "Weak",      color: "#f97316" },
+        { label: "Fair",      color: "#eab308" },
+        { label: "Good",      color: "#22c55e" },
+        { label: "Strong",    color: "#16a34a" },
+      ];
+
+      return { score, ...levels[Math.min(score, 4)] };
+    }
+
+    // ============================================================
+    // HELPER: Format a date string nicely
+    // ============================================================
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    }
+
+    // ============================================================
+    // COMPONENT: RegistrationForm
+    // ============================================================
+    // This is the main React component. It manages:
+    //   - Form field values (what the user typed)
+    //   - Validation errors (what is wrong)
+    //   - Submission state (loading, success, server error)
+    //   - The list of registered users
+    // ============================================================
+    function RegistrationForm() {
+
+      // ---- State: form field values ----
+      // React.useState creates a value and a function to update it.
+      // When a state value changes, React re-renders the component.
+      const [username, setUsername]             = React.useState("");
+      const [email, setEmail]                   = React.useState("");
+      const [password, setPassword]             = React.useState("");
+      const [confirmPassword, setConfirmPassword] = React.useState("");
+
+      // ---- State: validation errors per field ----
+      // An empty string means "no error for this field".
+      const [errors, setErrors] = React.useState({
+        username: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+
+      // ---- State: submission feedback ----
+      const [isLoading, setIsLoading]   = React.useState(false);
+      const [successMsg, setSuccessMsg] = React.useState("");
+      const [serverError, setServerError] = React.useState("");
+
+      // ---- State: registered users list ----
+      const [users, setUsers]         = React.useState([]);
+      const [loadingUsers, setLoadingUsers] = React.useState(false);
+
+      // ============================================================
+      // Fetch users from GET /api/users when the page first loads
+      // ============================================================
+      // React.useEffect runs code after the component renders.
+      // The empty array [] means: run this only once (on mount).
+      React.useEffect(() => {
+        fetchUsers();
+      }, []);
+
+      // ============================================================
+      // fetchUsers — load the registered users list from the API
+      // ============================================================
+      async function fetchUsers() {
+        setLoadingUsers(true);
+        try {
+          const res = await fetch(`${API_BASE}/api/users`);
+          const data = await res.json();
+          setUsers(data);
+        } catch (err) {
+          // If the API is not running, silently ignore the error
+          console.warn("Could not fetch users:", err.message);
+        } finally {
+          setLoadingUsers(false);
+        }
+      }
+
+      // ============================================================
+      // LIVE VALIDATION: validate a single field as the user types
+      // ============================================================
+      // This runs every time the user changes a field value.
+      // We only show errors once the user has started typing.
+      // ============================================================
+      function validateField(field, value) {
+        let error = "";
+
+        if (field === "username") {
+          if (!value.trim())
+            error = "Username is required.";
+          else if (value.trim().length < 3)
+            error = "Username must be at least 3 characters.";
+          else if (value.trim().length > 50)
+            error = "Username must be 50 characters or fewer.";
+        }
+
+        if (field === "email") {
+          if (!value.trim())
+            error = "Email is required.";
+          else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value))
+            error = "Please enter a valid email address.";
+        }
+
+        if (field === "password") {
+          if (!value)
+            error = "Password is required.";
+          else if (value.length < 6)
+            error = "Password must be at least 6 characters.";
+        }
+
+        if (field === "confirmPassword") {
+          if (!value)
+            error = "Please confirm your password.";
+          else if (value !== password)
+            error = "Passwords do not match.";
+        }
+
+        // Update only the error for this specific field
+        setErrors(prev => ({ ...prev, [field]: error }));
+        return error === "";
+      }
+
+      // ============================================================
+      // validateAll — validate every field before submitting
+      // ============================================================
+      function validateAll() {
+        const u = validateField("username", username);
+        const e = validateField("email", email);
+        const p = validateField("password", password);
+        const c = validateField("confirmPassword", confirmPassword);
+        return u && e && p && c;
+      }
+
+      // ============================================================
+      // handleSubmit — called when the user clicks Register
+      // ============================================================
+      async function handleSubmit(event) {
+        // Prevent the browser from reloading the page (default form behavior)
+        event.preventDefault();
+
+        // Clear any previous server error / success message
+        setServerError("");
+        setSuccessMsg("");
+
+        // Validate all fields first — stop if anything is invalid
+        if (!validateAll()) return;
+
+        setIsLoading(true);
+
+        try {
+          // Send a POST request to the API with the form data as JSON
+          const response = await fetch(`${API_BASE}/api/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email, password }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Success! Show the message and clear the form
+            setSuccessMsg(data.message + ` (User ID: ${data.userId})`);
+            setUsername("");
+            setEmail("");
+            setPassword("");
+            setConfirmPassword("");
+            setErrors({ username: "", email: "", password: "", confirmPassword: "" });
+
+            // Refresh the users list so the new user appears
+            fetchUsers();
+          } else {
+            // The API returned an error (e.g. username taken, validation failed)
+            setServerError(data.error || "Registration failed. Please try again.");
+          }
+
+        } catch (err) {
+          // Network error — the API might not be running
+          setServerError("Cannot connect to the server. Make sure the API is running.");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+
+      // ============================================================
+      // PASSWORD STRENGTH for the visual bar
+      // ============================================================
+      const strength = getPasswordStrength(password);
+
+      // ============================================================
+      // RENDER: build the HTML (JSX) for the component
+      // ============================================================
+      // JSX looks like HTML but it is actually JavaScript.
+      // Rules:
+      //   - className instead of class
+      //   - Curly braces {} for JavaScript expressions
+      //   - Self-closing tags for elements like <input />
+      // ============================================================
+      return (
+        <div className="card">
+          <h1 className="card-title">Create an Account</h1>
+          <p className="card-subtitle">Lesson 34 — User Registration with SQL Server</p>
+
+          {/* Success banner — only shown after a successful registration */}
+          {successMsg && (
+            <div className="alert alert-success">
+              ✓ {successMsg}
+            </div>
+          )}
+
+          {/* Error banner — only shown when the API returns an error */}
+          {serverError && (
+            <div className="alert alert-error">
+              ✗ {serverError}
+            </div>
+          )}
+
+          {/* Registration form */}
+          <form onSubmit={handleSubmit} noValidate>
+
+            {/* Username field */}
+            <div className="field">
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                placeholder="e.g. ricky_dev"
+                className={
+                  errors.username ? "has-error"
+                  : username.length >= 3 ? "is-valid"
+                  : ""
+                }
+                onChange={e => {
+                  setUsername(e.target.value);
+                  validateField("username", e.target.value);
+                }}
+              />
+              {errors.username && <p className="field-error">{errors.username}</p>}
+            </div>
+
+            {/* Email field */}
+            <div className="field">
+              <label htmlFor="email">Email Address</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                placeholder="you@example.com"
+                className={
+                  errors.email ? "has-error"
+                  : email && !errors.email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? "is-valid"
+                  : ""
+                }
+                onChange={e => {
+                  setEmail(e.target.value);
+                  validateField("email", e.target.value);
+                }}
+              />
+              {errors.email && <p className="field-error">{errors.email}</p>}
+            </div>
+
+            {/* Password field */}
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                placeholder="At least 6 characters"
+                className={
+                  errors.password ? "has-error"
+                  : password.length >= 6 ? "is-valid"
+                  : ""
+                }
+                onChange={e => {
+                  setPassword(e.target.value);
+                  validateField("password", e.target.value);
+                  // Re-validate confirm password if user is changing the password
+                  if (confirmPassword) validateField("confirmPassword", confirmPassword);
+                }}
+              />
+              {errors.password && <p className="field-error">{errors.password}</p>}
+
+              {/* Password strength bar — shows only when the user has typed something */}
+              {password && (
+                <>
+                  <div className="strength-bar-wrap">
+                    <div
+                      className="strength-bar"
+                      style={{
+                        width: `${(strength.score / 5) * 100}%`,
+                        background: strength.color,
+                      }}
+                    />
+                  </div>
+                  <p className="strength-label" style={{ color: strength.color }}>
+                    Strength: {strength.label}
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Confirm Password field */}
+            <div className="field">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                placeholder="Re-enter your password"
+                className={
+                  errors.confirmPassword ? "has-error"
+                  : confirmPassword && confirmPassword === password ? "is-valid"
+                  : ""
+                }
+                onChange={e => {
+                  setConfirmPassword(e.target.value);
+                  validateField("confirmPassword", e.target.value);
+                }}
+              />
+              {errors.confirmPassword && <p className="field-error">{errors.confirmPassword}</p>}
+            </div>
+
+            {/* Submit button */}
+            <button
+              type="submit"
+              className="btn-submit"
+              disabled={isLoading}
+            >
+              {isLoading ? "Registering..." : "Create Account"}
+            </button>
+
+          </form>
+
+          {/* Registered users list */}
+          <div className="users-section">
+            <div style={{ display: "flex", alignItems: "center", marginBottom: "14px" }}>
+              <span className="users-title" style={{ margin: 0 }}>Registered Users</span>
+              <button className="btn-refresh" onClick={fetchUsers} disabled={loadingUsers}>
+                {loadingUsers ? "Loading..." : "Refresh"}
+              </button>
+            </div>
+
+            {users.length === 0 && !loadingUsers && (
+              <p style={{ color: "#888", fontSize: "0.875rem" }}>
+                No users yet. Register above to see them here!
+              </p>
+            )}
+
+            {users.map(user => (
+              <div key={user.id} className="user-row">
+                <div>
+                  <span className="user-name">#{user.id} {user.username}</span>
+                  <br />
+                  <span className="user-email">{user.email}</span>
+                </div>
+                <span className="user-date">{formatDate(user.createdAt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // Render the app into the #root div
+    // ============================================================
+    // ReactDOM.createRoot is the modern way to start a React app.
+    // .render() tells React what to display.
+    // ============================================================
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<RegistrationForm />);
+
+  </script>
+</body>
+</html>

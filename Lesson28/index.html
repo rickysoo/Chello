@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 28: Forms in React</title>
+
+  <!-- Load React, ReactDOM, and Babel from CDN -->
+  <!-- React: the core library -->
+  <!-- ReactDOM: connects React to the browser DOM -->
+  <!-- Babel: transforms JSX and modern JS so the browser can run it -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 30px 16px;
+      color: #222;
+    }
+    h1 {
+      text-align: center;
+      color: #1a3c5e;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #555;
+      margin-bottom: 32px;
+      font-size: 15px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+      max-width: 520px;
+      margin: 0 auto 32px auto;
+      padding: 32px 36px;
+    }
+    h2 {
+      color: #1a3c5e;
+      margin-top: 0;
+      font-size: 20px;
+    }
+    .field {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    input:focus {
+      border-color: #3b82f6;
+    }
+    input.error-input {
+      border-color: #e53e3e;
+      background: #fff5f5;
+    }
+    input.valid-input {
+      border-color: #38a169;
+    }
+    .error-msg {
+      color: #e53e3e;
+      font-size: 12.5px;
+      margin-top: 4px;
+    }
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    button {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    .btn-submit {
+      background: #1a3c5e;
+      color: #fff;
+      flex: 1;
+    }
+    .btn-submit:disabled {
+      background: #9fb3c8;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .btn-submit:not(:disabled):hover {
+      background: #2563a8;
+    }
+    .btn-reset {
+      background: #e2e8f0;
+      color: #333;
+    }
+    .btn-reset:hover {
+      background: #cbd5e0;
+    }
+    .students-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 28px 36px;
+    }
+    .students-card h2 {
+      margin-top: 0;
+    }
+    .empty-msg {
+      color: #888;
+      font-style: italic;
+      text-align: center;
+      padding: 12px 0;
+    }
+    .student-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 7px;
+      background: #f7fafc;
+      margin-bottom: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .student-name {
+      font-weight: 600;
+      color: #1a3c5e;
+    }
+    .student-email {
+      font-size: 13px;
+      color: #555;
+    }
+    .score-badge {
+      background: #1a3c5e;
+      color: #fff;
+      border-radius: 20px;
+      padding: 3px 13px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .success-banner {
+      background: #c6f6d5;
+      color: #22543d;
+      border-radius: 7px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Lesson 28: Forms in React</h1>
+  <p class="subtitle">Controlled components, validation, and form submission</p>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    /*
+    ============================================================
+    LESSON 28: FORMS IN REACT
+    ============================================================
+
+    CONTROLLED vs UNCONTROLLED FORMS
+    ---------------------------------
+
+    UNCONTROLLED forms (the old HTML way):
+      - The browser manages the input's value internally
+      - You read the value using a ref (useRef) only when you need it
+      - Like: <input type="text" ref={myRef} />
+      - Less React-idiomatic; harder to validate in real time
+
+    CONTROLLED forms (the React way — preferred):
+      - React STATE owns the value of every input
+      - Every keystroke calls onChange, which updates state
+      - The input always shows what React state holds
+      - This gives you full control: validate on every change,
+        disable submit until valid, format input as the user types
+      - Pattern: <input value={state.field} onChange={e => setState(...)} />
+
+    KEY CONCEPTS IN THIS LESSON
+    ----------------------------
+
+    1. CONTROLLED INPUT
+       Each field has:
+         value={formData.fieldName}      — React state drives what is displayed
+         onChange={handleChange}         — every keystroke updates state
+
+    2. onChange HANDLER
+       A single handler handles all fields using the input's name attribute:
+         const handleChange = (e) => {
+           const { name, value } = e.target;
+           setFormData(prev => ({ ...prev, [name]: value }));
+         };
+
+    3. LIVE VALIDATION
+       validate() runs inside useEffect whenever formData changes.
+       It returns an errors object; if an error object is empty
+       the form is valid and the submit button is enabled.
+
+    4. onSubmit + preventDefault
+       The form's onSubmit calls e.preventDefault() to stop the
+       browser from reloading the page (default HTML behaviour).
+       Then we handle the submission ourselves in JavaScript.
+
+    5. DISABLED SUBMIT BUTTON
+       disabled={!isValid} — React keeps the button disabled
+       until all validation rules pass.
+
+    6. RESETTING THE FORM
+       Simply call setFormData back to the initial empty values.
+    ============================================================
+    */
+
+    // ============================================================
+    // INITIAL STATE — empty form, typed so we can reset easily
+    // ============================================================
+    const INITIAL_FORM = {
+      firstName: '',
+      lastName: '',
+      email: '',
+      score: '',
+    };
+
+    // ============================================================
+    // VALIDATION FUNCTION
+    // Returns an object: { fieldName: "error message" }
+    // An empty object means the form is valid.
+    // ============================================================
+    function validate(data) {
+      const errors = {};
+
+      if (!data.firstName.trim()) {
+        errors.firstName = 'First name is required.';
+      }
+
+      if (!data.lastName.trim()) {
+        errors.lastName = 'Last name is required.';
+      }
+
+      if (!data.email.trim()) {
+        errors.email = 'Email is required.';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        // Simple email pattern: something @ something . something
+        errors.email = 'Please enter a valid email address.';
+      }
+
+      if (data.score === '' || data.score === null) {
+        errors.score = 'Score is required.';
+      } else {
+        const num = Number(data.score);
+        if (isNaN(num) || !Number.isInteger(num)) {
+          errors.score = 'Score must be a whole number.';
+        } else if (num < 0 || num > 100) {
+          errors.score = 'Score must be between 0 and 100.';
+        }
+      }
+
+      return errors;
+    }
+
+    // ============================================================
+    // MAIN APP COMPONENT
+    // ============================================================
+    function App() {
+      // formData — the controlled state for every input field
+      const [formData, setFormData] = React.useState(INITIAL_FORM);
+
+      // errors — validation messages for each field
+      const [errors, setErrors] = React.useState({});
+
+      // touched — tracks which fields the user has interacted with
+      // so we only show errors after the user has typed in a field
+      const [touched, setTouched] = React.useState({});
+
+      // students — the list of submitted students shown below the form
+      const [students, setStudents] = React.useState([]);
+
+      // successMsg — brief confirmation shown after submission
+      const [successMsg, setSuccessMsg] = React.useState('');
+
+      // isValid — true when validate() returns no errors
+      const [isValid, setIsValid] = React.useState(false);
+
+      // -------------------------------------------------------
+      // Re-validate every time formData changes (live validation)
+      // -------------------------------------------------------
+      React.useEffect(() => {
+        const result = validate(formData);
+        setErrors(result);
+        // Form is valid when the errors object has no keys
+        setIsValid(Object.keys(result).length === 0);
+      }, [formData]);
+
+      // -------------------------------------------------------
+      // onChange — single handler for all controlled inputs
+      // Uses e.target.name to know which field changed
+      // -------------------------------------------------------
+      const handleChange = (e) => {
+        const { name, value } = e.target;
+        // Spread the previous state and update only the changed field
+        setFormData(prev => ({ ...prev, [name]: value }));
+      };
+
+      // -------------------------------------------------------
+      // onBlur — mark the field as "touched" when user leaves it
+      // so we start showing errors for that field
+      // -------------------------------------------------------
+      const handleBlur = (e) => {
+        const { name } = e.target;
+        setTouched(prev => ({ ...prev, [name]: true }));
+      };
+
+      // -------------------------------------------------------
+      // onSubmit — handle form submission
+      // e.preventDefault() stops the browser from doing a page reload
+      // -------------------------------------------------------
+      const handleSubmit = (e) => {
+        e.preventDefault(); // IMPORTANT: prevent default browser form submission
+
+        // Add the new student to the list
+        const newStudent = {
+          id: Date.now(), // simple unique id using current timestamp
+          ...formData,
+          score: Number(formData.score),
+        };
+        setStudents(prev => [newStudent, ...prev]);
+
+        // Show a success message
+        setSuccessMsg(`${formData.firstName} ${formData.lastName} registered successfully!`);
+        setTimeout(() => setSuccessMsg(''), 3000); // hide after 3 seconds
+
+        // Reset the form
+        handleReset();
+      };
+
+      // -------------------------------------------------------
+      // Reset — clear form back to empty initial state
+      // -------------------------------------------------------
+      const handleReset = () => {
+        setFormData(INITIAL_FORM);
+        setTouched({});
+        setSuccessMsg('');
+      };
+
+      // -------------------------------------------------------
+      // Helper: decide whether to show an error for a field.
+      // Only show if the field has been touched by the user.
+      // -------------------------------------------------------
+      const showError = (field) => touched[field] && errors[field];
+
+      // -------------------------------------------------------
+      // Helper: CSS class for the input based on validation state
+      // -------------------------------------------------------
+      const inputClass = (field) => {
+        if (!touched[field]) return '';
+        return errors[field] ? 'error-input' : 'valid-input';
+      };
+
+      // ============================================================
+      // RENDER
+      // ============================================================
+      return (
+        <div>
+
+          {/* ---- REGISTRATION FORM CARD ---- */}
+          <div className="card">
+            <h2>Student Registration</h2>
+
+            {/* Success banner — shown briefly after a successful submit */}
+            {successMsg && <div className="success-banner">{successMsg}</div>}
+
+            {/*
+              CONTROLLED FORM
+              onSubmit calls our handler (not the browser default)
+            */}
+            <form onSubmit={handleSubmit} noValidate>
+
+              {/* ---- FIRST NAME ---- */}
+              <div className="field">
+                <label htmlFor="firstName">First Name</label>
+                {/*
+                  CONTROLLED INPUT:
+                  value={formData.firstName}  — React state is the source of truth
+                  onChange={handleChange}     — every keystroke updates state
+                  onBlur={handleBlur}         — marks the field as touched
+                  name="firstName"            — handleChange uses this to know which field
+                */}
+                <input
+                  id="firstName"
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={inputClass('firstName')}
+                  placeholder="e.g. Sarah"
+                />
+                {showError('firstName') && (
+                  <div className="error-msg">{errors.firstName}</div>
+                )}
+              </div>
+
+              {/* ---- LAST NAME ---- */}
+              <div className="field">
+                <label htmlFor="lastName">Last Name</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={inputClass('lastName')}
+                  placeholder="e.g. Connor"
+                />
+                {showError('lastName') && (
+                  <div className="error-msg">{errors.lastName}</div>
+                )}
+              </div>
+
+              {/* ---- EMAIL ---- */}
+              <div className="field">
+                <label htmlFor="email">Email Address</label>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={inputClass('email')}
+                  placeholder="e.g. sarah@example.com"
+                />
+                {showError('email') && (
+                  <div className="error-msg">{errors.email}</div>
+                )}
+              </div>
+
+              {/* ---- SCORE ---- */}
+              <div className="field">
+                <label htmlFor="score">Score (0 – 100)</label>
+                <input
+                  id="score"
+                  type="number"
+                  name="score"
+                  value={formData.score}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={inputClass('score')}
+                  placeholder="e.g. 87"
+                  min="0"
+                  max="100"
+                />
+                {showError('score') && (
+                  <div className="error-msg">{errors.score}</div>
+                )}
+              </div>
+
+              {/* ---- BUTTONS ---- */}
+              <div className="btn-row">
+                {/*
+                  DISABLED SUBMIT:
+                  disabled={!isValid} keeps the button greyed out
+                  until all validation rules pass.
+                */}
+                <button
+                  type="submit"
+                  className="btn-submit"
+                  disabled={!isValid}
+                >
+                  Register Student
+                </button>
+
+                {/*
+                  RESET BUTTON:
+                  type="button" prevents it from triggering form submit.
+                  onClick calls handleReset to clear all state.
+                */}
+                <button
+                  type="button"
+                  className="btn-reset"
+                  onClick={handleReset}
+                >
+                  Reset
+                </button>
+              </div>
+
+            </form>
+          </div>
+
+          {/* ---- STUDENT LIST CARD ---- */}
+          <div className="students-card">
+            <h2>Registered Students ({students.length})</h2>
+
+            {students.length === 0 ? (
+              <p className="empty-msg">No students registered yet. Fill in the form above!</p>
+            ) : (
+              students.map(student => (
+                <div key={student.id} className="student-item">
+                  <div>
+                    <div className="student-name">
+                      {student.firstName} {student.lastName}
+                    </div>
+                    <div className="student-email">{student.email}</div>
+                  </div>
+                  <div className="score-badge">{student.score}</div>
+                </div>
+              ))
+            )}
+          </div>
+
+        </div>
+      );
+    }
+
+    // ============================================================
+    // MOUNT THE APP
+    // ReactDOM.createRoot attaches our React app to the #root div
+    // ============================================================
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+
+</body>
+</html>

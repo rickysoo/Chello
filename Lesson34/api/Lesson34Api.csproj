@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <!-- Target the latest .NET version -->
+    <TargetFramework>net10.0</TargetFramework>
+
+    <!-- Use the modern minimal API style (no Startup.cs needed) -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Port the dev server will run on -->
+    <ApplicationUrl>http://localhost:5034</ApplicationUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Microsoft.Data.SqlClient: the official SQL Server driver for .NET -->
+    <!-- This lets us connect to SQL Server and run queries from C# -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+  </ItemGroup>
+
+</Project>

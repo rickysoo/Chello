@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 30: React Router — Multiple Pages</title>
+
+  <!-- ============================================================
+       CDN IMPORTS
+       We load four libraries directly from the web — no install needed.
+
+       1. React         — the core library (components, state, hooks)
+       2. ReactDOM      — renders React components into the real HTML page
+       3. Babel         — lets us write JSX (<div />) in the browser
+       4. React Router  — gives us client-side routing (multiple "pages"
+                          without ever reloading the browser)
+       ============================================================ -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React Router v6 UMD build -->
+  <script src="https://unpkg.com/react-router-dom@6/dist/umd/react-router-dom.development.js"></script>
+
+  <style>
+    /* ---- Base reset & fonts ---- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f4f8;
+      color: #222;
+      min-height: 100vh;
+    }
+
+    /* ---- Navigation bar ---- */
+    nav {
+      background: #1a237e;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 56px;
+    }
+
+    nav .brand {
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-right: auto;
+      letter-spacing: 0.5px;
+    }
+
+    /* NavLink renders as <a> — we style it here */
+    nav a {
+      color: #c5cae9;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    nav a:hover {
+      background: #283593;
+      color: #fff;
+    }
+
+    /* React Router adds class="active" to the current NavLink */
+    nav a.active-link {
+      color: #fff;
+      font-weight: 700;
+      text-decoration: underline;
+      background: #283593;
+    }
+
+    /* ---- Page wrapper ---- */
+    .page {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+
+    h1 { font-size: 2rem; margin-bottom: 8px; color: #1a237e; }
+    h2 { font-size: 1.4rem; margin-bottom: 16px; color: #283593; }
+    p  { line-height: 1.6; margin-bottom: 12px; color: #444; }
+
+    /* ---- Stat cards on Home page ---- */
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      text-align: center;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .stat-card .number {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #1a237e;
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* ---- Student list ---- */
+    .student-list {
+      list-style: none;
+      margin-top: 8px;
+    }
+
+    .student-list li {
+      background: #fff;
+      border-radius: 8px;
+      padding: 14px 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .student-list li .info { display: flex; flex-direction: column; gap: 2px; }
+    .student-list li .name { font-weight: 600; font-size: 1rem; }
+    .student-list li .grade { font-size: 0.85rem; color: #666; }
+
+    /* View Details button / back link */
+    .btn {
+      display: inline-block;
+      background: #1a237e;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .btn:hover { background: #283593; }
+
+    .btn-secondary {
+      background: #fff;
+      color: #1a237e;
+      border: 2px solid #1a237e;
+      margin-top: 20px;
+    }
+
+    .btn-secondary:hover { background: #e8eaf6; }
+
+    /* ---- Detail card ---- */
+    .detail-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.09);
+      margin-top: 8px;
+    }
+
+    .detail-card .field {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 0.97rem;
+    }
+
+    .detail-card .field .key {
+      font-weight: 600;
+      min-width: 120px;
+      color: #555;
+    }
+
+    /* ---- Add Student form ---- */
+    form {
+      background: #fff;
+      border-radius: 10px;
+      padding: 28px 32px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.09);
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    label { font-weight: 600; font-size: 0.93rem; color: #444; }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.97rem;
+      margin-top: 4px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus { border-color: #1a237e; }
+
+    .success-msg {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-weight: 600;
+    }
+
+    .not-found {
+      background: #ffebee;
+      color: #c62828;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-top: 12px;
+    }
+
+    /* ---- About page ---- */
+    .about-section {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      margin-top: 16px;
+    }
+
+    .about-section h3 { color: #1a237e; margin-bottom: 10px; }
+    .about-section ul { padding-left: 20px; line-height: 1.9; color: #444; }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- ================================================================
+     TYPE: text/babel  — tells Babel to transpile this script block.
+     Everything below is JSX + modern JS, converted on-the-fly.
+     ================================================================ -->
+<script type="text/babel">
+
+// ============================================================
+// WHAT IS CLIENT-SIDE ROUTING?
+//
+// Normally, when you click a link the browser sends a NEW request
+// to the server, downloads a fresh HTML page, and reloads everything.
+//
+// Client-side routing is different:
+//   - Only ONE HTML file is ever downloaded (this file).
+//   - When the user "navigates", JavaScript swaps the content on
+//     screen without a real page reload.
+//   - The URL in the browser bar still changes (e.g. /students/3)
+//     so bookmarks and the back button still work perfectly.
+//
+// React Router watches the URL and renders the correct component
+// ("page") for that URL — all inside the browser.
+//
+// KEY CONCEPTS IN THIS LESSON:
+//
+//  BrowserRouter   — wraps the whole app; watches the browser URL
+//  Routes          — a container that holds all your Route definitions
+//  Route           — maps one URL path to one component
+//                    e.g. <Route path="/students" element={<Students />} />
+//  Link            — like <a href> but does NOT reload the page
+//  NavLink         — like Link but adds an "active" class when the
+//                    current URL matches, great for navigation bars
+//  useParams()     — a hook that reads URL parameters
+//                    e.g. /students/:id  →  { id: "3" }
+//  useNavigate()   — a hook that lets you navigate programmatically
+//                    e.g. after a form submit, go to another page
+// ============================================================
+
+// Destructure what we need from React Router (loaded via CDN as
+// the global ReactRouterDOM object).
+const {
+  BrowserRouter,   // Wraps the whole app — required once at the top
+  Routes,          // Container for all <Route> definitions
+  Route,           // Maps a URL path to a component
+  Link,            // Navigates without page reload
+  NavLink,         // Like Link, adds active class on current route
+  useParams,       // Hook: read URL params like :id
+  useNavigate,     // Hook: navigate programmatically
+} = ReactRouterDOM;
+
+// ============================================================
+// HARDCODED DATA
+// In a real app this would come from a database or API.
+// We store students in React state (at the App level) so that
+// the "Add Student" page can actually add to the list.
+// ============================================================
+
+const INITIAL_STUDENTS = [
+  { id: 1, name: "Alice Johnson",  grade: "Grade 10", subject: "Mathematics", score: 92 },
+  { id: 2, name: "Bob Martinez",   grade: "Grade 11", subject: "Science",     score: 85 },
+  { id: 3, name: "Carol Lee",      grade: "Grade 10", subject: "English",     score: 78 },
+  { id: 4, name: "David Kim",      grade: "Grade 12", subject: "History",     score: 95 },
+  { id: 5, name: "Emma Wilson",    grade: "Grade 11", subject: "Mathematics", score: 88 },
+];
+
+// ============================================================
+// NAVIGATION BAR
+// NavLink is like <a> but:
+//   - It does NOT reload the page.
+//   - It accepts a className function so we can style the active link.
+// ============================================================
+
+function NavBar() {
+  // className receives { isActive } from NavLink.
+  // We return "active-link" when the link matches the current URL.
+  const linkClass = ({ isActive }) => isActive ? "active-link" : "";
+
+  return (
+    <nav>
+      <span className="brand">📘 Chello — Lesson 30</span>
+
+      {/* NavLink "to" is the URL path, NOT an href */}
+      <NavLink to="/"         className={linkClass} end>Home</NavLink>
+      <NavLink to="/students" className={linkClass}>Students</NavLink>
+      <NavLink to="/add"      className={linkClass}>Add Student</NavLink>
+      <NavLink to="/about"    className={linkClass}>About</NavLink>
+
+      {/*
+        NOTE: The "end" prop on the Home link prevents it from
+        staying active when you visit /students.
+        Without "end", "/" matches ALL paths (since they all start with /).
+      */}
+    </nav>
+  );
+}
+
+// ============================================================
+// PAGE 1: HOME
+// Shows a welcome message and quick stats about the students.
+// ============================================================
+
+function HomePage({ students }) {
+  // Calculate stats from the students array
+  const total    = students.length;
+  const avgScore = total > 0
+    ? Math.round(students.reduce((sum, s) => sum + s.score, 0) / total)
+    : 0;
+  const topStudent = students.reduce(
+    (best, s) => s.score > best.score ? s : best,
+    students[0] || { name: "—", score: 0 }
+  );
+
+  return (
+    <div className="page">
+      <h1>Welcome to the Student Portal</h1>
+      <p>
+        This is a demo multi-page app built with <strong>React Router</strong>.
+        Use the navigation bar above to explore different pages — notice that the
+        browser URL changes but the page never fully reloads. That is client-side
+        routing in action!
+      </p>
+      <p>
+        <strong>How it works:</strong> React Router watches the URL bar. When it
+        changes, it swaps out the component shown below the nav — instantly, with
+        no server round-trip.
+      </p>
+
+      {/* Quick stats */}
+      <div className="stats">
+        <div className="stat-card">
+          <div className="number">{total}</div>
+          <div className="label">Total Students</div>
+        </div>
+        <div className="stat-card">
+          <div className="number">{avgScore}</div>
+          <div className="label">Average Score</div>
+        </div>
+        <div className="stat-card">
+          <div className="number">{topStudent.score}</div>
+          <div className="label">Top Score ({topStudent.name.split(" ")[0]})</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// PAGE 2: STUDENTS LIST
+// Shows all students. Each row has a "View Details" button that
+// navigates to /students/:id using a Link component.
+// ============================================================
+
+function StudentsPage({ students }) {
+  return (
+    <div className="page">
+      <h1>All Students</h1>
+      <p>Click <em>View Details</em> on any student to see their full profile.
+         The URL will change to <code>/students/1</code>, <code>/students/2</code>,
+         etc. — each student gets their own unique URL.
+      </p>
+
+      <ul className="student-list">
+        {students.map(student => (
+          <li key={student.id}>
+            <div className="info">
+              <span className="name">{student.name}</span>
+              <span className="grade">{student.grade} · {student.subject}</span>
+            </div>
+
+            {/*
+              Link navigates to /students/3 (for example) without reload.
+              We build the path string using a template literal.
+            */}
+            <Link to={`/students/${student.id}`} className="btn">
+              View Details
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ============================================================
+// PAGE 3: STUDENT DETAIL
+// URL pattern: /students/:id
+//
+// useParams() reads the :id part from the URL.
+// For the URL /students/3, useParams() returns { id: "3" }.
+// Note: URL params are always strings — we use Number() to convert.
+// ============================================================
+
+function StudentDetailPage({ students }) {
+  // useParams returns an object matching the named segments in the Route path.
+  // Route path="/students/:id"  →  { id: "3" }
+  const { id } = useParams();
+
+  // useNavigate returns a function we can call to go to another URL.
+  const navigate = useNavigate();
+
+  // Find the student whose id matches the URL param.
+  // URL params are strings, so we convert with Number().
+  const student = students.find(s => s.id === Number(id));
+
+  // If no student found, show a friendly error.
+  if (!student) {
+    return (
+      <div className="page">
+        <h1>Student Not Found</h1>
+        <div className="not-found">
+          No student with ID <strong>{id}</strong> exists in our records.
+        </div>
+        {/* Programmatic navigation using useNavigate */}
+        <button className="btn btn-secondary" onClick={() => navigate("/students")}>
+          ← Back to Students
+        </button>
+      </div>
+    );
+  }
+
+  // Grade colour helper
+  const scoreColor = student.score >= 90 ? "#2e7d32"
+                   : student.score >= 75 ? "#1565c0"
+                   : "#e65100";
+
+  return (
+    <div className="page">
+      <h1>Student Profile</h1>
+
+      <div className="detail-card">
+        <div className="field">
+          <span className="key">Name</span>
+          <span>{student.name}</span>
+        </div>
+        <div className="field">
+          <span className="key">Student ID</span>
+          <span>#{student.id}</span>
+        </div>
+        <div className="field">
+          <span className="key">Grade</span>
+          <span>{student.grade}</span>
+        </div>
+        <div className="field">
+          <span className="key">Subject</span>
+          <span>{student.subject}</span>
+        </div>
+        <div className="field">
+          <span className="key">Score</span>
+          <span style={{ color: scoreColor, fontWeight: 700 }}>
+            {student.score} / 100
+          </span>
+        </div>
+      </div>
+
+      {/*
+        useNavigate() — programmatic navigation.
+        Instead of a Link, we call navigate("/students") inside an onClick.
+        Useful when you need to navigate AFTER doing something (e.g. saving data).
+      */}
+      <button
+        className="btn btn-secondary"
+        onClick={() => navigate("/students")}
+      >
+        ← Back to Students
+      </button>
+    </div>
+  );
+}
+
+// ============================================================
+// PAGE 4: ADD STUDENT
+// A form that adds a new student to the shared state.
+// After submission we use useNavigate() to redirect to /students.
+// ============================================================
+
+function AddStudentPage({ onAdd }) {
+  // Local state for the controlled form fields
+  const [name,    setName]    = React.useState("");
+  const [grade,   setGrade]   = React.useState("Grade 10");
+  const [subject, setSubject] = React.useState("");
+  const [score,   setScore]   = React.useState("");
+  const [success, setSuccess] = React.useState(false);
+
+  // useNavigate gives us a navigate function we can call anywhere.
+  const navigate = useNavigate();
+
+  function handleSubmit(e) {
+    e.preventDefault(); // prevent default browser form submit (which would reload the page)
+
+    if (!name.trim() || !subject.trim() || score === "") return;
+
+    // Call the onAdd callback passed down from App.
+    onAdd({
+      name:    name.trim(),
+      grade,
+      subject: subject.trim(),
+      score:   Number(score),
+    });
+
+    // Show a brief success message, then navigate away after 1.2 seconds.
+    setSuccess(true);
+    setTimeout(() => {
+      // useNavigate in action — after adding a student, go to /students
+      navigate("/students");
+    }, 1200);
+  }
+
+  return (
+    <div className="page">
+      <h1>Add a New Student</h1>
+      <p>
+        Fill in the form and click <em>Add Student</em>. After saving, we use
+        <code> useNavigate()</code> to automatically redirect you to the
+        Students list so you can see the new entry.
+      </p>
+
+      {success && (
+        <div className="success-msg">Student added! Redirecting to Students list…</div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <label>
+          Full Name
+          <input
+            type="text"
+            placeholder="e.g. Sarah Connor"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+        </label>
+
+        <label>
+          Grade
+          <select value={grade} onChange={e => setGrade(e.target.value)}>
+            <option>Grade 10</option>
+            <option>Grade 11</option>
+            <option>Grade 12</option>
+          </select>
+        </label>
+
+        <label>
+          Subject
+          <input
+            type="text"
+            placeholder="e.g. Physics"
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+            required
+          />
+        </label>
+
+        <label>
+          Score (0–100)
+          <input
+            type="number"
+            min="0"
+            max="100"
+            placeholder="e.g. 87"
+            value={score}
+            onChange={e => setScore(e.target.value)}
+            required
+          />
+        </label>
+
+        <button type="submit" className="btn">Add Student</button>
+      </form>
+    </div>
+  );
+}
+
+// ============================================================
+// PAGE 5: ABOUT
+// Static info page about this lesson and the course.
+// ============================================================
+
+function AboutPage() {
+  return (
+    <div className="page">
+      <h1>About This Course</h1>
+      <p>
+        <strong>Chello</strong> is a beginner-friendly C# (and web) programming
+        course that teaches programming fundamentals step by step.
+      </p>
+
+      <div className="about-section">
+        <h3>What You Learned in Lesson 30</h3>
+        <ul>
+          <li><strong>BrowserRouter</strong> — wraps the app and watches the URL</li>
+          <li><strong>Routes + Route</strong> — maps URL paths to components</li>
+          <li><strong>Link</strong> — navigate without reloading the page</li>
+          <li><strong>NavLink</strong> — like Link, highlights the active page</li>
+          <li><strong>useParams()</strong> — read dynamic URL segments like <code>:id</code></li>
+          <li><strong>useNavigate()</strong> — navigate programmatically from code</li>
+          <li>Passing shared state (students array) through multiple pages</li>
+          <li>Building a mini Student Portal with 5 pages in one HTML file</li>
+        </ul>
+      </div>
+
+      <div className="about-section" style={{ marginTop: 16 }}>
+        <h3>Course Overview</h3>
+        <ul>
+          <li>Lessons 01–09: C# fundamentals (variables, loops, OOP, SQL)</li>
+          <li>Lessons 10–19: Web basics (HTML, CSS, JavaScript)</li>
+          <li>Lessons 20–29: React fundamentals (state, props, hooks)</li>
+          <li>Lesson 30: React Router — this lesson!</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// ROOT APP COMPONENT
+//
+// BrowserRouter  — must wrap everything that uses routing.
+// Routes         — holds all Route definitions; renders the FIRST match.
+// Route          — path="/students/:id" means :id is a dynamic segment.
+//
+// We keep the students array in App state so that AddStudentPage
+// can add to it and StudentsPage / StudentDetailPage can read it.
+// ============================================================
+
+function App() {
+  // Shared students state — lives here so all pages see the same data.
+  const [students, setStudents] = React.useState(INITIAL_STUDENTS);
+
+  // Called by AddStudentPage when a form is submitted.
+  function handleAddStudent(newData) {
+    const newStudent = {
+      id: students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1,
+      ...newData,
+    };
+    setStudents(prev => [...prev, newStudent]);
+  }
+
+  return (
+    // BrowserRouter watches window.location and re-renders when the URL changes.
+    <BrowserRouter>
+
+      {/* NavBar is outside <Routes> so it always shows on every page */}
+      <NavBar />
+
+      {/*
+        Routes renders the FIRST <Route> whose path matches the current URL.
+        Order matters for ambiguous paths, but exact matching is the default in v6.
+      */}
+      <Routes>
+
+        {/* path="/" — Home page (the root URL) */}
+        <Route path="/"          element={<HomePage students={students} />} />
+
+        {/* path="/students" — list of all students */}
+        <Route path="/students"  element={<StudentsPage students={students} />} />
+
+        {/*
+          path="/students/:id" — detail page for ONE student.
+          :id is a URL parameter — it can be any value.
+          /students/1  →  id = "1"
+          /students/42 →  id = "42"
+          The StudentDetailPage component reads it with useParams().
+        */}
+        <Route path="/students/:id" element={<StudentDetailPage students={students} />} />
+
+        {/* path="/add" — form to add a new student */}
+        <Route path="/add"       element={<AddStudentPage onAdd={handleAddStudent} />} />
+
+        {/* path="/about" — static info page */}
+        <Route path="/about"     element={<AboutPage />} />
+
+        {/*
+          Catch-all route — "*" matches any URL that nothing else matched.
+          Good practice: always add a 404 fallback.
+        */}
+        <Route path="*" element={
+          <div className="page">
+            <h1>404 — Page Not Found</h1>
+            <p>The URL <code>{window.location.pathname}</code> does not exist.</p>
+            <Link to="/" className="btn" style={{ marginTop: 16, display: "inline-block" }}>
+              Go Home
+            </Link>
+          </div>
+        } />
+
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+// ============================================================
+// MOUNT THE APP
+// ReactDOM.createRoot().render() attaches the App to the #root div.
+// Everything inside App (including the Router) runs inside the browser.
+// ============================================================
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+
+</script>
+</body>
+</html>

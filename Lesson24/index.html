@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- ============================================================
+       RESPONSIVE DESIGN: The viewport meta tag
+       Without this, mobile browsers zoom out to show the full
+       desktop page. This tells the browser:
+         width=device-width  → match the screen's actual width
+         initial-scale=1.0   → do not zoom in or out on load
+       This is REQUIRED for media queries to work correctly on
+       mobile devices.
+  ============================================================ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 24: Responsive Design</title>
+
+  <style>
+    /* ============================================================
+       WHAT IS RESPONSIVE DESIGN?
+       ============================================================
+       Responsive design means your web page looks good on ALL
+       screen sizes — from a 320px wide phone to a 2560px wide
+       desktop monitor.
+
+       The three core tools are:
+         1. Flexible layouts  (%, fr, flexbox, grid)
+         2. Fluid images      (max-width: 100%)
+         3. Media queries     (@media) — apply styles at breakpoints
+
+       MOBILE-FIRST APPROACH
+       ============================================================
+       We write the BASE styles for small screens first.
+       Then we use @media (min-width: ...) to ADD styles for
+       larger screens. This is called "mobile-first" because the
+       default styles target mobile, and larger screens override
+       them upward.
+
+       Why mobile-first?
+         - Most web traffic today is on mobile devices
+         - It forces you to prioritise content over decoration
+         - min-width queries are generally easier to reason about
+           than max-width queries
+
+       BREAKPOINTS USED IN THIS LESSON
+       ============================================================
+         < 600px   → Mobile   (base styles, no media query)
+           600px+  → Tablet   (@media (min-width: 600px))
+           900px+  → Desktop  (@media (min-width: 900px))
+    ============================================================ */
+
+    /* ----------------------------------------------------------
+       CSS RESET / BASE
+       Remove browser inconsistencies so our styles are predictable
+    ---------------------------------------------------------- */
+    *, *::before, *::after {
+      box-sizing: border-box; /* padding and border included in width */
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #222;
+      background: #f4f6f9;
+    }
+
+    /* ----------------------------------------------------------
+       BREAKPOINT BANNER
+       Uses CSS content changes at each breakpoint so you can
+       see exactly which breakpoint is active as you resize.
+       The ::after pseudo-element on <body> draws the banner.
+    ---------------------------------------------------------- */
+    body::before {
+      display: block;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      padding: 6px;
+      color: #fff;
+
+      /* MOBILE default (< 600px) */
+      content: 'BREAKPOINT: MOBILE  (< 600px)';
+      background: #e74c3c; /* red */
+    }
+
+    /* TABLET (600px and above) */
+    @media (min-width: 600px) {
+      body::before {
+        content: 'BREAKPOINT: TABLET  (>= 600px)';
+        background: #e67e22; /* orange */
+      }
+    }
+
+    /* DESKTOP (900px and above) */
+    @media (min-width: 900px) {
+      body::before {
+        content: 'BREAKPOINT: DESKTOP  (>= 900px)';
+        background: #27ae60; /* green */
+      }
+    }
+
+    /* ----------------------------------------------------------
+       PAGE WRAPPER
+       A centred container with comfortable padding
+    ---------------------------------------------------------- */
+    .container {
+      width: 100%;
+      max-width: 1100px;   /* cap width on very wide screens */
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* ----------------------------------------------------------
+       NAVIGATION BAR
+       Mobile-first: stacked vertically by default.
+       On tablet+ the links line up horizontally.
+    ---------------------------------------------------------- */
+    nav {
+      background: #1a1a2e;
+      padding: 0;
+    }
+
+    .nav-inner {
+      display: flex;
+      flex-direction: column; /* MOBILE: stack logo + links */
+      align-items: flex-start;
+    }
+
+    .nav-logo {
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 14px 16px;
+      text-decoration: none;
+      display: block;
+    }
+
+    .nav-links {
+      /* MOBILE: links are hidden by default (collapsed menu) */
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      list-style: none;
+    }
+
+    .nav-links.open {
+      /* toggled open by the hamburger button (JS below) */
+      display: flex;
+    }
+
+    .nav-links li a {
+      display: block;
+      color: #ccc;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-top: 1px solid #2a2a4a;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .nav-links li a:hover {
+      background: #16213e;
+      color: #fff;
+    }
+
+    /* Hamburger button — visible only on mobile */
+    .nav-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      position: absolute;
+      top: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .nav-toggle span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+    }
+
+    /* TABLET+ (@media min-width: 600px)
+       Navigation becomes a horizontal row */
+    @media (min-width: 600px) {
+      .nav-inner {
+        flex-direction: row;     /* logo + links side by side */
+        align-items: center;
+      }
+
+      /* Hide the hamburger on larger screens */
+      .nav-toggle {
+        display: none;
+      }
+
+      /* Always show links horizontally */
+      .nav-links {
+        display: flex !important; /* override .open toggle */
+        flex-direction: row;
+        width: auto;
+      }
+
+      .nav-links li a {
+        border-top: none;
+        border-left: 1px solid #2a2a4a;
+        padding: 18px 20px;
+      }
+    }
+
+    /* ----------------------------------------------------------
+       PAGE HEADER
+    ---------------------------------------------------------- */
+    .page-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 40px 16px;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    .page-header p {
+      font-size: 1rem;
+      color: #aaa;
+    }
+
+    @media (min-width: 600px) {
+      .page-header h1 { font-size: 2.2rem; }
+    }
+
+    @media (min-width: 900px) {
+      .page-header { padding: 60px 16px; }
+      .page-header h1 { font-size: 2.8rem; }
+      .page-header p  { font-size: 1.15rem; }
+    }
+
+    /* ----------------------------------------------------------
+       MAIN CONTENT AREA
+    ---------------------------------------------------------- */
+    main {
+      padding: 32px 0;
+    }
+
+    section {
+      margin-bottom: 48px;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 3px solid #e74c3c;
+      display: inline-block;
+    }
+
+    p {
+      margin-bottom: 12px;
+      color: #444;
+    }
+
+    /* ----------------------------------------------------------
+       FLUID IMAGE
+       max-width: 100% prevents images from overflowing their
+       container on small screens. The image shrinks to fit but
+       never grows larger than its natural size.
+       height: auto preserves the aspect ratio.
+    ---------------------------------------------------------- */
+    .fluid-image-demo img {
+      max-width: 100%; /* KEY RULE for responsive images */
+      height: auto;    /* maintain aspect ratio */
+      display: block;
+      border-radius: 8px;
+      border: 3px solid #1a1a2e;
+    }
+
+    .fluid-image-demo figcaption {
+      font-size: 0.85rem;
+      color: #777;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
+    /* ----------------------------------------------------------
+       3-COLUMN GRID  →  1-COLUMN ON MOBILE
+       Mobile-first: single column by default.
+       Tablet: 2 columns.
+       Desktop: 3 columns.
+    ---------------------------------------------------------- */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr;        /* MOBILE: 1 column */
+      gap: 20px;
+    }
+
+    @media (min-width: 600px) {
+      .feature-grid {
+        grid-template-columns: 1fr 1fr;  /* TABLET: 2 columns */
+      }
+    }
+
+    @media (min-width: 900px) {
+      .feature-grid {
+        grid-template-columns: 1fr 1fr 1fr; /* DESKTOP: 3 columns */
+      }
+    }
+
+    .feature-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      border-top: 4px solid #e74c3c;
+    }
+
+    .feature-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+      color: #1a1a2e;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .feature-card .icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    /* ----------------------------------------------------------
+       STUDENT CARD GRID
+       Uses CSS Grid with auto-fill and minmax() so the browser
+       automatically decides how many columns fit.
+       This is a flexible approach that doesn't need explicit
+       breakpoints — it reflows naturally.
+
+       minmax(220px, 1fr) means:
+         - Each card is at least 220px wide
+         - Cards grow to fill available space equally
+       auto-fill creates as many columns as will fit.
+    ---------------------------------------------------------- */
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .student-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .student-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+
+    .student-card .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .student-card h4 {
+      font-size: 0.95rem;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .student-card p {
+      font-size: 0.8rem;
+      color: #888;
+      margin: 0;
+    }
+
+    /* ----------------------------------------------------------
+       CODE BLOCK
+       Styled code snippets for the lesson examples
+    ---------------------------------------------------------- */
+    pre {
+      background: #1a1a2e;
+      color: #e8e8e8;
+      padding: 20px;
+      border-radius: 8px;
+      overflow-x: auto;       /* scroll on mobile instead of overflow */
+      font-size: 0.85rem;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    .comment  { color: #7ec8e3; }
+    .property { color: #f9ca24; }
+    .value    { color: #6ab04c; }
+    .at-rule  { color: #e17055; }
+
+    /* ----------------------------------------------------------
+       INFO BOX  (tip callout)
+    ---------------------------------------------------------- */
+    .tip {
+      background: #eaf4ff;
+      border-left: 4px solid #3498db;
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: #1a4a6e;
+    }
+
+    .tip strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+
+    /* ----------------------------------------------------------
+       FOOTER
+    ---------------------------------------------------------- */
+    footer {
+      background: #1a1a2e;
+      color: #aaa;
+      text-align: center;
+      padding: 24px 16px;
+      font-size: 0.85rem;
+      margin-top: 40px;
+    }
+
+    footer a {
+      color: #e74c3c;
+      text-decoration: none;
+    }
+
+    /* ----------------------------------------------------------
+       UTILITY
+    ---------------------------------------------------------- */
+    .label {
+      display: inline-block;
+      background: #e74c3c;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .mt { margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       NAVIGATION BAR
+       On mobile: logo + hamburger button. Links hidden until
+       the button is clicked (toggled via JavaScript below).
+       On tablet+: all links visible in a horizontal row.
+  ============================================================ -->
+  <nav>
+    <div class="container" style="position:relative;">
+      <div class="nav-inner">
+        <a href="#" class="nav-logo">&#128187; Chello</a>
+
+        <!-- Hamburger icon (3 lines) — only visible on mobile -->
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <!-- Navigation links — hidden on mobile until toggled -->
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#">Home</a></li>
+          <li><a href="#">Lessons</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       PAGE HEADER
+  ============================================================ -->
+  <header class="page-header">
+    <h1>Lesson 24: Responsive Design</h1>
+    <p>Make your web pages look great on every screen — phone, tablet, or desktop.</p>
+  </header>
+
+  <!-- ============================================================
+       MAIN CONTENT
+  ============================================================ -->
+  <main>
+    <div class="container">
+
+      <!-- ---- SECTION 1: What Is Responsive Design ---- -->
+      <section>
+        <span class="label">Concept</span>
+        <h2>What Is Responsive Design?</h2>
+        <p>
+          A <strong>responsive</strong> web page automatically adjusts its layout, font sizes,
+          images, and spacing to fit the screen it is displayed on. There is only one HTML file
+          — CSS does all the heavy lifting.
+        </p>
+        <div class="tip">
+          <strong>The Three Pillars</strong>
+          1. Flexible layouts (%, fr, flexbox, grid)<br>
+          2. Fluid images (max-width: 100%)<br>
+          3. Media queries (@media) for breakpoints
+        </div>
+      </section>
+
+      <!-- ---- SECTION 2: Viewport Meta Tag ---- -->
+      <section>
+        <span class="label">HTML</span>
+        <h2>The Viewport Meta Tag</h2>
+        <p>
+          This tag lives in <code>&lt;head&gt;</code> and is required for responsive design to
+          work on mobile browsers. Without it, phones zoom out and ignore your media queries.
+        </p>
+        <pre><code><span class="comment">&lt;!-- Required in every responsive page --&gt;</span>
+<span class="property">&lt;meta</span> name=<span class="value">"viewport"</span>
+      content=<span class="value">"width=device-width, initial-scale=1.0"</span> <span class="property">/&gt;</span>
+
+<span class="comment">&lt;!-- width=device-width  → match the real screen width
+     initial-scale=1.0  → no automatic zoom on load --&gt;</span></code></pre>
+      </section>
+
+      <!-- ---- SECTION 3: Mobile-First CSS ---- -->
+      <section>
+        <span class="label">CSS Pattern</span>
+        <h2>Mobile-First CSS Approach</h2>
+        <p>
+          Write your <strong>base styles for mobile</strong> first — no media query needed.
+          Then use <code>min-width</code> media queries to add styles for larger screens.
+        </p>
+        <pre><code><span class="comment">/* BASE (mobile, &lt; 600px) — no media query */</span>
+<span class="property">.container</span> {
+  <span class="property">padding</span>: <span class="value">0 16px</span>;
+  <span class="property">font-size</span>: <span class="value">1rem</span>;
+}
+
+<span class="comment">/* TABLET — 600px and above */</span>
+<span class="at-rule">@media</span> (min-width: <span class="value">600px</span>) {
+  <span class="property">.container</span> {
+    <span class="property">padding</span>: <span class="value">0 32px</span>;
+    <span class="property">font-size</span>: <span class="value">1.05rem</span>;
+  }
+}
+
+<span class="comment">/* DESKTOP — 900px and above */</span>
+<span class="at-rule">@media</span> (min-width: <span class="value">900px</span>) {
+  <span class="property">.container</span> {
+    <span class="property">max-width</span>: <span class="value">1100px</span>;
+    <span class="property">margin</span>: <span class="value">0 auto</span>;
+    <span class="property">font-size</span>: <span class="value">1.1rem</span>;
+  }
+}</code></pre>
+        <div class="tip">
+          <strong>min-width vs max-width</strong>
+          Mobile-first uses <code>min-width</code> (styles apply from this width upward).
+          Desktop-first uses <code>max-width</code> (styles apply up to this width). Mobile-first
+          is the industry standard today.
+        </div>
+      </section>
+
+      <!-- ---- SECTION 4: 3-Column Grid ---- -->
+      <section>
+        <span class="label">Grid Layout</span>
+        <h2>3-Column Grid &rarr; 1-Column on Mobile</h2>
+        <p>
+          Resize this window to see the cards reflow. On mobile they stack in one column;
+          on tablet they become two columns; on desktop, three columns.
+        </p>
+        <pre><code><span class="comment">/* MOBILE: single column (default) */</span>
+<span class="property">.feature-grid</span> {
+  <span class="property">display</span>: <span class="value">grid</span>;
+  <span class="property">grid-template-columns</span>: <span class="value">1fr</span>;
+  <span class="property">gap</span>: <span class="value">20px</span>;
+}
+
+<span class="comment">/* TABLET: 2 columns */</span>
+<span class="at-rule">@media</span> (min-width: <span class="value">600px</span>) {
+  <span class="property">.feature-grid</span> {
+    <span class="property">grid-template-columns</span>: <span class="value">1fr 1fr</span>;
+  }
+}
+
+<span class="comment">/* DESKTOP: 3 columns */</span>
+<span class="at-rule">@media</span> (min-width: <span class="value">900px</span>) {
+  <span class="property">.feature-grid</span> {
+    <span class="property">grid-template-columns</span>: <span class="value">1fr 1fr 1fr</span>;
+  }
+}</code></pre>
+
+        <!-- Live demo of the 3-column grid -->
+        <div class="feature-grid mt">
+          <div class="feature-card">
+            <div class="icon">&#128241;</div>
+            <h3>Mobile First</h3>
+            <p>Design for the smallest screen, then enhance upward. Content always works on every device.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">&#128269;</div>
+            <h3>Media Queries</h3>
+            <p>Apply different CSS rules at specific viewport widths using the @media at-rule.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">&#9881;</div>
+            <h3>Flexible Units</h3>
+            <p>Use %, em, rem, vw, and fr instead of fixed pixels so elements scale naturally.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">&#128248;</div>
+            <h3>Fluid Images</h3>
+            <p>Images with max-width: 100% shrink on small screens and never overflow their container.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">&#128203;</div>
+            <h3>Grid &amp; Flexbox</h3>
+            <p>Modern CSS layout tools that create flexible, multi-column designs without floats.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">&#127760;</div>
+            <h3>Viewport Meta</h3>
+            <p>The meta viewport tag tells mobile browsers to match the real screen width.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- SECTION 5: Fluid Images ---- -->
+      <section>
+        <span class="label">Images</span>
+        <h2>Fluid Images</h2>
+        <p>
+          The single most important CSS rule for images is <code>max-width: 100%</code>.
+          It lets images shrink on narrow screens while never growing beyond their natural size.
+        </p>
+        <pre><code><span class="comment">/* Makes all images responsive */</span>
+<span class="property">img</span> {
+  <span class="property">max-width</span>: <span class="value">100%</span>;  <span class="comment">/* shrink to fit container */</span>
+  <span class="property">height</span>: <span class="value">auto</span>;     <span class="comment">/* keep aspect ratio */</span>
+  <span class="property">display</span>: <span class="value">block</span>;   <span class="comment">/* remove inline spacing */</span>
+}</code></pre>
+        <div class="fluid-image-demo">
+          <figure>
+            <!-- SVG placeholder image — no external file needed -->
+            <img
+              src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='300' viewBox='0 0 900 300'%3E%3Crect width='900' height='300' fill='%231a1a2e'/%3E%3Crect x='0' y='0' width='300' height='300' fill='%23e74c3c' opacity='.7'/%3E%3Crect x='300' y='0' width='300' height='300' fill='%23e67e22' opacity='.7'/%3E%3Crect x='600' y='0' width='300' height='300' fill='%2327ae60' opacity='.7'/%3E%3Ctext x='150' y='160' font-family='Arial' font-size='22' fill='white' text-anchor='middle'%3EMobile%3C/text%3E%3Ctext x='450' y='160' font-family='Arial' font-size='22' fill='white' text-anchor='middle'%3ETablet%3C/text%3E%3Ctext x='750' y='160' font-family='Arial' font-size='22' fill='white' text-anchor='middle'%3EDesktop%3C/text%3E%3Ctext x='450' y='60' font-family='Arial' font-size='16' fill='%23ccc' text-anchor='middle'%3Emax-width: 100%25 — resize the window to see me shrink%3C/text%3E%3C/svg%3E"
+              alt="Fluid image demonstration — shrinks with the container"
+              width="900"
+              height="300"
+            />
+            <figcaption>This image is 900px wide but shrinks with the container thanks to max-width: 100%.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ---- SECTION 6: Collapsing Navigation ---- -->
+      <section>
+        <span class="label">Navigation</span>
+        <h2>Collapsing Navigation Bar</h2>
+        <p>
+          Scroll to the top of this page and resize the window. Below 600px a hamburger
+          button appears. Click it to reveal the navigation links stacked vertically.
+          Above 600px the links are always visible in a horizontal row.
+        </p>
+        <pre><code><span class="comment">/* MOBILE: hide links; show hamburger */</span>
+<span class="property">.nav-links</span> { <span class="property">display</span>: <span class="value">none</span>; }
+<span class="property">.nav-links.open</span> { <span class="property">display</span>: <span class="value">flex</span>; <span class="property">flex-direction</span>: <span class="value">column</span>; }
+<span class="property">.nav-toggle</span> { <span class="property">display</span>: <span class="value">flex</span>; }
+
+<span class="comment">/* TABLET+: show links; hide hamburger */</span>
+<span class="at-rule">@media</span> (min-width: <span class="value">600px</span>) {
+  <span class="property">.nav-links</span>  { <span class="property">display</span>: <span class="value">flex</span> !important; <span class="property">flex-direction</span>: <span class="value">row</span>; }
+  <span class="property">.nav-toggle</span> { <span class="property">display</span>: <span class="value">none</span>; }
+}</code></pre>
+      </section>
+
+      <!-- ---- SECTION 7: Student Card Grid (auto-fill) ---- -->
+      <section>
+        <span class="label">Auto-Fill Grid</span>
+        <h2>Student Card Grid (Reflows Automatically)</h2>
+        <p>
+          Using <code>repeat(auto-fill, minmax(220px, 1fr))</code> the browser decides how
+          many cards fit per row — no explicit breakpoints needed. Resize the window to watch
+          the cards reflow.
+        </p>
+        <pre><code><span class="comment">/* No breakpoints needed — auto-fill handles it */</span>
+<span class="property">.student-grid</span> {
+  <span class="property">display</span>: <span class="value">grid</span>;
+  <span class="property">grid-template-columns</span>: repeat(<span class="value">auto-fill</span>, minmax(<span class="value">220px</span>, <span class="value">1fr</span>));
+  <span class="property">gap</span>: <span class="value">20px</span>;
+}
+<span class="comment">/* Each card is at least 220px wide.
+   As many columns as can fit are created.
+   Cards grow equally to fill remaining space. */</span></code></pre>
+
+        <div class="student-grid mt">
+          <div class="student-card">
+            <div class="avatar" style="background:#e74c3c;">AL</div>
+            <h4>Alice Lee</h4>
+            <p>Front-end track</p>
+          </div>
+          <div class="student-card">
+            <div class="avatar" style="background:#3498db;">BM</div>
+            <h4>Bob Martinez</h4>
+            <p>Full-stack track</p>
+          </div>
+          <div class="student-card">
+            <div class="avatar" style="background:#27ae60;">CK</div>
+            <h4>Clara Kim</h4>
+            <p>UI/UX track</p>
+          </div>
+          <div class="student-card">
+            <div class="avatar" style="background:#8e44ad;">DP</div>
+            <h4>David Park</h4>
+            <p>Back-end track</p>
+          </div>
+          <div class="student-card">
+            <div class="avatar" style="background:#e67e22;">EN</div>
+            <h4>Eva Nguyen</h4>
+            <p>Front-end track</p>
+          </div>
+          <div class="student-card">
+            <div class="avatar" style="background:#16a085;">FO</div>
+            <h4>Frank Osei</h4>
+            <p>Full-stack track</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- SECTION 8: Quick Reference ---- -->
+      <section>
+        <span class="label">Reference</span>
+        <h2>Quick Reference</h2>
+        <pre><code><span class="comment">/* 1. Always include the viewport meta tag */</span>
+&lt;<span class="property">meta</span> name=<span class="value">"viewport"</span> content=<span class="value">"width=device-width, initial-scale=1.0"</span>&gt;
+
+<span class="comment">/* 2. Fluid images */</span>
+<span class="property">img</span> { <span class="property">max-width</span>: <span class="value">100%</span>; <span class="property">height</span>: <span class="value">auto</span>; }
+
+<span class="comment">/* 3. Mobile-first media queries */</span>
+<span class="comment">/* base = mobile, no query needed */</span>
+<span class="at-rule">@media</span> (min-width: <span class="value">600px</span>) { <span class="comment">/* tablet  */</span> }
+<span class="at-rule">@media</span> (min-width: <span class="value">900px</span>) { <span class="comment">/* desktop */</span> }
+
+<span class="comment">/* 4. Flexible grid */</span>
+<span class="property">.grid</span> { <span class="property">display</span>: <span class="value">grid</span>; <span class="property">grid-template-columns</span>: <span class="value">1fr</span>; }
+<span class="at-rule">@media</span> (min-width: <span class="value">600px</span>) { <span class="property">.grid</span> { <span class="property">grid-template-columns</span>: <span class="value">1fr 1fr</span>; } }
+<span class="at-rule">@media</span> (min-width: <span class="value">900px</span>) { <span class="property">.grid</span> { <span class="property">grid-template-columns</span>: <span class="value">1fr 1fr 1fr</span>; } }
+
+<span class="comment">/* 5. Auto-reflow grid (no breakpoints) */</span>
+<span class="property">.auto-grid</span> {
+  <span class="property">display</span>: <span class="value">grid</span>;
+  <span class="property">grid-template-columns</span>: repeat(<span class="value">auto-fill</span>, minmax(<span class="value">220px</span>, <span class="value">1fr</span>));
+}</code></pre>
+      </section>
+
+    </div><!-- /.container -->
+  </main>
+
+  <!-- ============================================================
+       FOOTER
+  ============================================================ -->
+  <footer>
+    <p>Lesson 24 &mdash; Responsive Design &mdash; <a href="#">Chello C# &amp; Web Course</a></p>
+    <p style="margin-top:6px;">Resize this window to see responsive design in action.</p>
+  </footer>
+
+  <!-- ============================================================
+       JAVASCRIPT: Hamburger menu toggle
+       This tiny script adds/removes the .open class on the nav
+       links list when the hamburger button is clicked. Pure CSS
+       cannot handle click toggles, so a small amount of JS is
+       needed for the mobile menu.
+  ============================================================ -->
+  <script>
+    const toggle = document.getElementById('navToggle');
+    const links  = document.getElementById('navLinks');
+
+    toggle.addEventListener('click', function () {
+      // Toggle the .open class to show/hide the nav links on mobile
+      links.classList.toggle('open');
+    });
+  </script>
+
+</body>
+</html>

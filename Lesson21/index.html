@@ -1,0 +1,370 @@
+<!--
+  ============================================================
+  LESSON 21: HTML BASICS — YOUR FIRST WEBPAGE
+  ============================================================
+
+  What is HTML?
+  -------------
+  HTML stands for HyperText Markup Language. It is the standard
+  language used to create and structure content on the web.
+
+  HTML is NOT a programming language — it is a MARKUP language.
+  That means it uses special tags to describe and organize content,
+  telling the browser what each piece of content IS (a heading,
+  a paragraph, a list, a link, etc.).
+
+  How HTML Works:
+  ---------------
+  - You write HTML in a plain text file saved with a .html extension
+  - A web browser (Chrome, Firefox, Edge) reads the file and displays
+    the content visually based on the tags you used
+  - Tags come in pairs: an opening tag <tagname> and a closing tag </tagname>
+  - The content goes BETWEEN the opening and closing tags
+
+  Example:
+    <p>This is a paragraph.</p>
+    ^                        ^
+    opening tag              closing tag
+
+  Key Concepts Covered in This Lesson:
+  --------------------------------------
+  1. HTML document structure (DOCTYPE, html, head, body)
+  2. Headings (h1 through h6)
+  3. Paragraphs
+  4. Text formatting (bold, italic)
+  5. Links (anchor tags)
+  6. Images
+  7. Ordered and unordered lists
+  8. Tables
+  9. Div and span (containers)
+  ============================================================
+-->
+
+<!DOCTYPE html>
+<!-- DOCTYPE tells the browser this is a modern HTML5 document -->
+
+<html lang="en">
+<!-- The <html> tag is the root element — everything goes inside it -->
+<!-- lang="en" tells the browser the page language is English -->
+
+<head>
+  <!-- The <head> section contains information ABOUT the page -->
+  <!-- This content is NOT visible on the page itself -->
+
+  <meta charset="UTF-8">
+  <!-- charset tells the browser to use UTF-8 text encoding (supports most characters) -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- viewport makes the page scale correctly on mobile devices -->
+
+  <title>Lesson 21: HTML Basics — Your First Webpage</title>
+  <!-- The <title> appears in the browser tab at the top of the window -->
+
+</head>
+
+<body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 30px; max-width: 800px; margin: 0 auto; color: #333;">
+  <!-- The <body> tag contains everything VISIBLE on the page -->
+  <!-- The inline style here adds a clean background, readable font, and centered layout -->
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: HEADINGS                                          -->
+  <!-- ============================================================ -->
+
+  <!-- Headings are used for titles and section labels -->
+  <!-- h1 is the biggest (main title), h6 is the smallest -->
+  <!-- You should only have ONE h1 per page — it is the main topic -->
+
+  <h1>Welcome to Lesson 21: HTML Basics</h1>
+  <!-- h1 = the most important heading on the page, used once -->
+
+  <h2>Section: Headings</h2>
+  <!-- h2 = a major section heading -->
+
+  <h3>This is an h3 heading</h3>
+  <!-- h3 = a sub-section heading under h2 -->
+
+  <h4>This is an h4 heading</h4>
+  <!-- h4 = smaller sub-section -->
+
+  <h5>This is an h5 heading</h5>
+  <!-- h5 = even smaller, rarely used in practice -->
+
+  <h6>This is an h6 heading (the smallest)</h6>
+  <!-- h6 = the smallest heading — often used for fine print labels -->
+
+  <hr>
+  <!-- <hr> draws a horizontal rule (a dividing line) — it has no closing tag -->
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: PARAGRAPHS                                        -->
+  <!-- ============================================================ -->
+
+  <h2>Section: Paragraphs</h2>
+
+  <p>This is a paragraph. Paragraphs are blocks of text used to write sentences and descriptions. The browser automatically adds space above and below each paragraph.</p>
+  <!-- <p> = paragraph. Use it for any block of body text -->
+
+  <p>This is a second paragraph. Notice that even though there is no blank line in the HTML code between the two paragraphs, the browser still separates them visually. HTML ignores extra whitespace — the tags control the layout.</p>
+  <!-- Each <p> tag starts a new block of text with its own spacing -->
+
+  <hr>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: TEXT FORMATTING — BOLD AND ITALIC                 -->
+  <!-- ============================================================ -->
+
+  <h2>Section: Bold and Italic Text</h2>
+
+  <p>You can make text <strong>bold using the strong tag</strong> to emphasize important words.</p>
+  <!-- <strong> makes text bold AND signals it is important (better than just <b>) -->
+
+  <p>You can make text <em>italic using the em tag</em> to add emphasis or highlight terms.</p>
+  <!-- <em> makes text italic AND signals emphasis (better than just <i>) -->
+
+  <p>You can combine them: <strong><em>this text is both bold and italic</em></strong>.</p>
+  <!-- Tags can be nested inside each other -->
+
+  <hr>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 4: LINKS                                             -->
+  <!-- ============================================================ -->
+
+  <h2>Section: Links (Anchor Tags)</h2>
+
+  <p>Links allow users to navigate to other pages. Click the link below:</p>
+
+  <p>
+    <a href="https://www.example.com">Visit Example.com</a>
+  </p>
+  <!-- <a> = anchor tag, used to create hyperlinks -->
+  <!-- href="URL" is the attribute that sets the destination address -->
+  <!-- The text between the tags is what the user sees and clicks -->
+
+  <p>
+    <a href="https://www.example.com" target="_blank">Open Example.com in a new tab</a>
+  </p>
+  <!-- target="_blank" opens the link in a new browser tab instead of the current one -->
+
+  <p>
+    <a href="mailto:hello@example.com">Send us an email</a>
+  </p>
+  <!-- href="mailto:..." creates a link that opens the user's email app -->
+
+  <hr>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 5: IMAGES                                            -->
+  <!-- ============================================================ -->
+
+  <h2>Section: Images</h2>
+
+  <p>Images are embedded using the img tag. It is a self-closing tag (no closing tag needed).</p>
+
+  <img src="https://via.placeholder.com/400x200" alt="A placeholder image 400 by 200 pixels" style="display: block; margin: 10px 0; border: 1px solid #ccc;">
+  <!-- <img> = image element -->
+  <!-- src="URL" is the image source — where the image file is located -->
+  <!-- alt="..." is alternative text shown if the image fails to load (also used by screen readers for accessibility) -->
+  <!-- style here adds a border and spacing for visual clarity -->
+
+  <p>
+    <img src="https://via.placeholder.com/100x100" alt="A small square placeholder image" style="border-radius: 50%;">
+    <!-- You can also display small inline images — here styled as a circle -->
+  </p>
+
+  <hr>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 6: UNORDERED LIST (BULLET POINTS)                    -->
+  <!-- ============================================================ -->
+
+  <h2>Section: Unordered List (Bullet Points)</h2>
+
+  <p>Use an unordered list when the ORDER of items does not matter:</p>
+
+  <ul>
+    <!-- <ul> = unordered list (displays bullet points) -->
+
+    <li>HTML — structure of the page</li>
+    <!-- <li> = list item. Each bullet point is wrapped in <li> -->
+
+    <li>CSS — styling and visual design</li>
+
+    <li>JavaScript — interactive behavior</li>
+
+    <li>These three are the core building blocks of every website</li>
+  </ul>
+  <!-- </ul> closes the unordered list -->
+
+  <hr>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 7: ORDERED LIST (NUMBERED)                           -->
+  <!-- ============================================================ -->
+
+  <h2>Section: Ordered List (Numbered Steps)</h2>
+
+  <p>Use an ordered list when the ORDER of items matters (like steps in a process):</p>
+
+  <ol>
+    <!-- <ol> = ordered list (displays numbers automatically) -->
+
+    <li>Open a text editor (like VS Code or Notepad)</li>
+    <!-- The browser handles the numbering — you do not type the numbers yourself -->
+
+    <li>Write your HTML code</li>
+
+    <li>Save the file with a .html extension</li>
+
+    <li>Open the file in a web browser</li>
+
+    <li>See your webpage displayed!</li>
+  </ol>
+  <!-- </ol> closes the ordered list -->
+
+  <hr>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 8: TABLE                                             -->
+  <!-- ============================================================ -->
+
+  <h2>Section: Tables</h2>
+
+  <p>Tables are used to display data in rows and columns — like a spreadsheet:</p>
+
+  <table style="border-collapse: collapse; width: 100%; background-color: #fff;">
+    <!-- <table> = starts a table -->
+    <!-- border-collapse: collapse makes the cell borders merge cleanly -->
+
+    <thead style="background-color: #3a5a8a; color: white;">
+      <!-- <thead> = the table header section (column labels) -->
+
+      <tr>
+        <!-- <tr> = table row. Each row is wrapped in <tr> -->
+
+        <th style="padding: 10px; text-align: left; border: 1px solid #ccc;">Student Name</th>
+        <!-- <th> = table header cell. Text is bold by default -->
+
+        <th style="padding: 10px; text-align: left; border: 1px solid #ccc;">Course</th>
+
+        <th style="padding: 10px; text-align: left; border: 1px solid #ccc;">Grade</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <!-- <tbody> = the table body section (the actual data rows) -->
+
+      <tr>
+        <!-- Row 1 of data -->
+        <td style="padding: 10px; border: 1px solid #ccc;">Alice Johnson</td>
+        <!-- <td> = table data cell (regular content cell, not a header) -->
+
+        <td style="padding: 10px; border: 1px solid #ccc;">Introduction to HTML</td>
+
+        <td style="padding: 10px; border: 1px solid #ccc;">A</td>
+      </tr>
+
+      <tr style="background-color: #f9f9f9;">
+        <!-- Row 2 of data — alternating background color for readability -->
+        <td style="padding: 10px; border: 1px solid #ccc;">Ben Martinez</td>
+
+        <td style="padding: 10px; border: 1px solid #ccc;">CSS Fundamentals</td>
+
+        <td style="padding: 10px; border: 1px solid #ccc;">B+</td>
+      </tr>
+
+      <tr>
+        <!-- Row 3 of data -->
+        <td style="padding: 10px; border: 1px solid #ccc;">Clara Nguyen</td>
+
+        <td style="padding: 10px; border: 1px solid #ccc;">JavaScript Basics</td>
+
+        <td style="padding: 10px; border: 1px solid #ccc;">A-</td>
+      </tr>
+
+    </tbody>
+
+  </table>
+  <!-- </table> closes the table -->
+
+  <hr>
+
+
+  <!-- ============================================================ -->
+  <!-- SECTION 9: DIV AND SPAN (CONTAINERS)                         -->
+  <!-- ============================================================ -->
+
+  <h2>Section: Div and Span (Grouping Elements)</h2>
+
+  <p>Two very commonly used tags are <strong>div</strong> and <strong>span</strong>. They have no visual appearance on their own — they are used to GROUP content so you can style or organize it.</p>
+
+  <div style="background-color: #dce8f7; border-left: 4px solid #3a5a8a; padding: 15px; margin: 10px 0;">
+    <!-- <div> = a block-level container. It takes up the full width and starts on a new line -->
+    <!-- Think of a div like a box or section that groups related content together -->
+    <p>This entire blue box is wrapped in a single div. The background color and border are applied to the div itself, which groups everything inside it.</p>
+    <p>Divs are one of the most used elements in web development for layout and organization.</p>
+  </div>
+
+  <p>
+    In a paragraph, you can highlight <span style="background-color: yellow; padding: 2px 4px;">specific words using a span</span> without breaking the flow of the sentence.
+    <!-- <span> = an inline container. It stays within the flow of text (does NOT start a new line) -->
+    <!-- Use span to style or target a small part of text inside a larger block -->
+  </p>
+
+  <p>Another example: the word <span style="color: #cc0000; font-weight: bold;">important</span> is wrapped in a span so it can be styled red and bold independently of the rest of the sentence.</p>
+
+  <hr>
+
+
+  <!-- ============================================================ -->
+  <!-- SUMMARY SECTION: WHAT YOU LEARNED                            -->
+  <!-- ============================================================ -->
+
+  <div style="background-color: #eaf4ea; border: 2px solid #4caf50; border-radius: 6px; padding: 20px; margin-top: 30px;">
+
+    <h2 style="color: #2e7d32;">What You Learned in Lesson 21</h2>
+
+    <p>Great work making it through your first HTML lesson! Here is a summary of every tag you encountered:</p>
+
+    <table style="border-collapse: collapse; width: 100%; background-color: #fff;">
+      <thead style="background-color: #4caf50; color: white;">
+        <tr>
+          <th style="padding: 8px 12px; text-align: left; border: 1px solid #ccc;">Tag</th>
+          <th style="padding: 8px 12px; text-align: left; border: 1px solid #ccc;">What It Does</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;!DOCTYPE html&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Declares this is an HTML5 document</td></tr>
+        <tr style="background-color: #f9f9f9;"><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;html&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">The root element that wraps the entire page</td></tr>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;head&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Contains page metadata (not visible to users)</td></tr>
+        <tr style="background-color: #f9f9f9;"><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;title&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Sets the text shown in the browser tab</td></tr>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;body&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Contains all visible page content</td></tr>
+        <tr style="background-color: #f9f9f9;"><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;h1&gt; – &lt;h6&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Headings from largest (h1) to smallest (h6)</td></tr>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;p&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">A paragraph of text</td></tr>
+        <tr style="background-color: #f9f9f9;"><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;strong&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Bold text (with semantic importance)</td></tr>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;em&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Italic text (with semantic emphasis)</td></tr>
+        <tr style="background-color: #f9f9f9;"><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;a&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">A hyperlink to another page or resource</td></tr>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;img&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Embeds an image (self-closing, no closing tag)</td></tr>
+        <tr style="background-color: #f9f9f9;"><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;ul&gt; / &lt;li&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Unordered (bullet point) list and list items</td></tr>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;ol&gt; / &lt;li&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Ordered (numbered) list and list items</td></tr>
+        <tr style="background-color: #f9f9f9;"><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;table&gt;, &lt;tr&gt;, &lt;th&gt;, &lt;td&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">Table, row, header cell, and data cell</td></tr>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;div&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">A block-level container for grouping elements</td></tr>
+        <tr style="background-color: #f9f9f9;"><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;span&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">An inline container for styling part of text</td></tr>
+        <tr><td style="padding: 8px 12px; border: 1px solid #ccc;"><code>&lt;hr&gt;</code></td><td style="padding: 8px 12px; border: 1px solid #ccc;">A horizontal dividing line</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top: 20px;"><strong>Next Steps:</strong> In Lesson 22, you will learn CSS — the language that controls the visual styling of your HTML elements (colors, fonts, spacing, layout, and more).</p>
+
+  </div>
+
+</body>
+</html>

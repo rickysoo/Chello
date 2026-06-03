@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 23: CSS Styling</title>
+
+  <style>
+    /*
+    ============================================================
+    WHAT IS CSS?
+    ============================================================
+    CSS stands for Cascading Style Sheets.
+    While HTML builds the structure of a page (the skeleton),
+    CSS controls how that structure LOOKS (the skin and clothes).
+
+    CSS works by targeting HTML elements using "selectors" and
+    then applying rules (property: value pairs) to them.
+
+    Basic syntax:
+      selector {
+        property: value;
+        another-property: value;
+      }
+
+    "Cascading" means styles flow down — a parent's style can
+    affect its children, and more specific rules override
+    less specific ones.
+    ============================================================
+    */
+
+
+    /* ============================================================
+       SECTION 1: CSS VARIABLES
+       Variables let you define a value once and reuse it
+       everywhere. Change it in one place and it updates globally.
+       Variables are defined inside :root (the top-level element)
+       and referenced with var(--variable-name).
+    ============================================================ */
+
+    :root {
+      --primary-color: #1a2e5a;       /* Navy blue — used for headings and accents */
+      --accent-color: #2f6fd4;        /* Brighter blue — used for highlights */
+      --background-color: #f4f6fb;    /* Light gray — page background */
+      --card-background: #ffffff;     /* White — card background */
+      --text-color: #2c3e50;          /* Dark gray — body text */
+      --text-muted: #6b7a99;          /* Lighter gray — secondary text */
+      --border-color: #d0d8e8;        /* Soft blue-gray — card borders */
+      --font-size-base: 16px;         /* Base font size — all rem units scale from this */
+    }
+
+
+    /* ============================================================
+       SECTION 2: ELEMENT SELECTOR
+       Targets every instance of a specific HTML tag.
+       Here we reset margins/padding and set global defaults
+       on the body and all elements.
+    ============================================================ */
+
+    /* The * selector targets EVERY element on the page */
+    * {
+      box-sizing: border-box; /* Padding and border are included in element width */
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Element selector: targets the <body> tag */
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: var(--font-size-base);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    /* Element selector: targets every <h1> tag */
+    h1 {
+      color: var(--primary-color);
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    /* Element selector: targets every <h2> tag */
+    h2 {
+      color: var(--primary-color);
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    /* Element selector: targets every <p> tag */
+    p {
+      margin-bottom: 12px;
+    }
+
+
+    /* ============================================================
+       SECTION 3: CLASS SELECTOR
+       Targets any element that has a matching class="..." attribute.
+       Class selectors start with a dot (.)
+       Multiple elements can share the same class.
+    ============================================================ */
+
+    /* Class selector: .page-header targets <div class="page-header"> */
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .page-header .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    /* Class selector: .section-label is used as a visual divider */
+    .section-label {
+      display: inline-block;
+      background-color: var(--accent-color);
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+
+    /* Class selector: .lesson-section wraps each concept block */
+    .lesson-section {
+      background-color: var(--card-background);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin-bottom: 36px;
+      max-width: 960px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .lesson-section h2 {
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+
+
+    /* ============================================================
+       SECTION 4: ID SELECTOR
+       Targets a single element with a specific id="..." attribute.
+       ID selectors start with a hash (#).
+       Each ID must be unique on the page — use it for one-of-a-kind elements.
+    ============================================================ */
+
+    /* ID selector: #main-container targets <div id="main-container"> */
+    #main-container {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+
+    /* ============================================================
+       SECTION 5: COLORS
+       CSS supports colors in several formats:
+         - Named:    red, navy, white
+         - Hex:      #1a2e5a  (6-digit hex, red/green/blue)
+         - RGB:      rgb(26, 46, 90)
+         - RGBA:     rgba(26, 46, 90, 0.5)  (with transparency)
+         - HSL:      hsl(220, 55%, 23%)
+    ============================================================ */
+
+    .color-demo {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .color-swatch {
+      width: 120px;
+      height: 70px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Background color */
+    .swatch-navy    { background-color: #1a2e5a; color: #ffffff; }
+    /* Text color */
+    .swatch-blue    { background-color: #e8eef8; color: #2f6fd4; border-color: #2f6fd4; }
+    /* Border color */
+    .swatch-border  { background-color: #ffffff; border: 3px solid #e05c3a; color: #e05c3a; }
+    /* RGBA transparency */
+    .swatch-rgba    { background-color: rgba(47, 111, 212, 0.15); color: #1a2e5a; }
+
+
+    /* ============================================================
+       SECTION 6: THE BOX MODEL
+       Every HTML element is a rectangular box made of 4 layers:
+         1. Content  — the actual text or image inside
+         2. Padding  — space between content and the border
+         3. Border   — a line drawn around the padding
+         4. Margin   — space outside the border, between elements
+
+       [  margin  [  border  [  padding  [  content  ]  ]  ]  ]
+    ============================================================ */
+
+    .box-demo {
+      margin-top: 16px;
+    }
+
+    /* Outer margin box */
+    .box-margin {
+      background-color: #fce8d0;
+      padding: 20px;
+      border: 2px dashed #e0873a;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #7a4010;
+    }
+
+    /* Inner border box */
+    .box-border {
+      background-color: #d0e4fc;
+      padding: 16px;
+      border: 3px solid #2f6fd4;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    /* Inner padding box */
+    .box-padding {
+      background-color: #d6f0d6;
+      padding: 14px;
+      border: 2px dashed #3a9a3a;
+      border-radius: 4px;
+    }
+
+    /* Content box */
+    .box-content {
+      background-color: #ffffff;
+      padding: 10px 14px;
+      border: 1px solid #aaa;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .box-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+
+    /* ============================================================
+       SECTION 7: TYPOGRAPHY
+       Typography controls how text looks:
+         - font-family: which typeface to use
+         - font-size:   how big the text is
+         - font-weight: how bold (100=thin, 400=normal, 700=bold)
+         - line-height: vertical space between lines (improves readability)
+         - letter-spacing: space between characters
+         - text-transform: uppercase, lowercase, capitalize
+    ============================================================ */
+
+    .type-demo {
+      margin-top: 12px;
+    }
+
+    .type-row {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .type-row:last-child {
+      border-bottom: none;
+    }
+
+    .type-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+
+    /* Each class demonstrates a different typography property */
+    .font-serif       { font-family: Georgia, 'Times New Roman', serif; font-size: 1.1rem; }
+    .font-mono        { font-family: 'Courier New', Courier, monospace; font-size: 0.95rem; }
+    .font-large       { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); }
+    .font-small       { font-size: 0.8rem; color: var(--text-muted); }
+    .font-spaced      { letter-spacing: 4px; text-transform: uppercase; font-size: 0.85rem; }
+    .font-loose       { line-height: 2.2; font-size: 0.9rem; }
+
+
+    /* ============================================================
+       SECTION 8: FLEXBOX
+       Flexbox is a layout system for arranging items in a row or column.
+       Apply display: flex to a container, and its direct children
+       become "flex items" that you can align and space easily.
+
+       Key properties on the container:
+         - flex-direction: row (default) or column
+         - justify-content: how to space items along the main axis
+         - align-items: how to align items on the cross axis
+         - gap: space between items
+         - flex-wrap: allow items to wrap to the next line
+    ============================================================ */
+
+    /* The flex container — makes its children line up in a row */
+    .cards-container {
+      display: flex;
+      flex-direction: row;    /* Arrange cards left to right */
+      justify-content: center; /* Center the group of cards */
+      align-items: stretch;   /* All cards stretch to the same height */
+      gap: 24px;              /* 24px space between each card */
+      flex-wrap: wrap;        /* Wrap to next line on small screens */
+      margin-top: 24px;
+    }
+
+
+    /* ============================================================
+       SECTION 9: STUDENT CARD COMPONENT
+       A reusable card component built with the concepts above:
+         - Box model for padding, border, margin
+         - Typography for text styling
+         - Colors for the visual theme
+         - Flexbox inside the card for internal layout
+         - Hover effects for interactivity
+    ============================================================ */
+
+    /* Class selector: .student-card styles each card */
+    .student-card {
+      /* Box model */
+      width: 280px;
+      padding: 28px 24px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+
+      /* Colors */
+      background-color: var(--card-background);
+
+      /* Inner layout using flexbox (column direction) */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+
+      /* Smooth shadow for depth */
+      box-shadow: 0 2px 8px rgba(26, 46, 90, 0.07);
+
+      /* transition enables the smooth hover animation */
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    /* The avatar circle at the top of the card */
+    .student-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;           /* Makes it a circle */
+      background-color: var(--primary-color);
+      color: #ffffff;
+      font-size: 1.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      border: 3px solid var(--accent-color);
+    }
+
+    /* Student name inside the card */
+    .student-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 4px;
+    }
+
+    /* Student role/subject label */
+    .student-subject {
+      font-size: 0.82rem;
+      color: var(--accent-color);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
+
+    /* Divider line inside the card */
+    .student-divider {
+      width: 40px;
+      height: 2px;
+      background-color: var(--border-color);
+      margin: 0 auto 12px;
+      border-radius: 2px;
+    }
+
+    /* Short bio text */
+    .student-bio {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 16px;
+    }
+
+    /* Grade badge at the bottom */
+    .student-grade {
+      display: inline-block;
+      background-color: #e8eef8;
+      color: var(--primary-color);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Highlight color varies per card using modifier classes */
+    .student-card--green  .student-avatar { background-color: #1a6645; border-color: #2da870; }
+    .student-card--green  .student-grade  { background-color: #e4f4ec; color: #1a6645; }
+
+    .student-card--purple .student-avatar { background-color: #4a2a7a; border-color: #8a5fd4; }
+    .student-card--purple .student-grade  { background-color: #ede8f8; color: #4a2a7a; }
+
+
+    /* ============================================================
+       SECTION 10: HOVER EFFECTS
+       The :hover pseudo-class applies styles when the mouse
+       moves over an element. Combined with transition (set above),
+       this creates smooth animated interactions.
+    ============================================================ */
+
+    /* When the user hovers over a card: */
+    .student-card:hover {
+      transform: translateY(-6px);                       /* Lift the card up 6px */
+      box-shadow: 0 12px 28px rgba(26, 46, 90, 0.15);   /* Bigger shadow for depth */
+      border-color: var(--accent-color);                 /* Highlight the border */
+    }
+
+    /* Hover effect on the grade badge */
+    .student-grade:hover {
+      background-color: var(--accent-color);
+      color: #ffffff;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+
+    /* ============================================================
+       RESPONSIVE NOTE
+       On small screens (phones), flex-wrap: wrap makes the cards
+       stack vertically. No extra media queries needed here
+       because the layout is already flexible.
+    ============================================================ */
+
+  </style>
+</head>
+<body>
+
+  <!-- ID selector target — one unique container for the whole page -->
+  <div id="main-container">
+
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <span class="section-label">Lesson 23</span>
+      <h1>CSS Styling</h1>
+      <p class="subtitle">Learn how to make your HTML look great using Cascading Style Sheets</p>
+    </div>
+
+
+    <!-- =========================================================
+         CONCEPT 1: SELECTORS
+    ========================================================== -->
+    <div class="lesson-section">
+      <h2>1. Selectors</h2>
+      <p>CSS selectors tell the browser <strong>which elements</strong> to style. The three most common types are:</p>
+      <ul style="margin-left: 20px; line-height: 2;">
+        <li><code>p { }</code> — <strong>Element selector</strong>: targets every &lt;p&gt; tag</li>
+        <li><code>.card { }</code> — <strong>Class selector</strong>: targets anything with <code>class="card"</code></li>
+        <li><code>#header { }</code> — <strong>ID selector</strong>: targets the one element with <code>id="header"</code></li>
+      </ul>
+      <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.9rem;">
+        A class is like a label you can apply to many elements. An ID is a unique name for one element only.
+      </p>
+    </div>
+
+
+    <!-- =========================================================
+         CONCEPT 2: COLORS
+    ========================================================== -->
+    <div class="lesson-section">
+      <h2>2. Colors</h2>
+      <p>You can set color on the background, text, and border of any element. CSS accepts color names, hex codes, rgb(), and rgba() values.</p>
+      <div class="color-demo">
+        <div class="color-swatch swatch-navy">background-color:<br>#1a2e5a</div>
+        <div class="color-swatch swatch-blue">color:<br>#2f6fd4</div>
+        <div class="color-swatch swatch-border">border:<br>#e05c3a</div>
+        <div class="color-swatch swatch-rgba">rgba()<br>transparency</div>
+      </div>
+    </div>
+
+
+    <!-- =========================================================
+         CONCEPT 3: BOX MODEL
+    ========================================================== -->
+    <div class="lesson-section">
+      <h2>3. The Box Model</h2>
+      <p>Every element is a box with four layers. From outside to inside: <strong>margin → border → padding → content</strong>.</p>
+      <div class="box-demo">
+        <div class="box-margin">
+          <div class="box-label">Margin (orange dashed) — space outside the border</div>
+          <div class="box-border">
+            <div class="box-label" style="color:#1a4080;">Border (blue solid) — the visible edge</div>
+            <div class="box-padding">
+              <div class="box-label" style="color:#1a6020;">Padding (green dashed) — space inside the border</div>
+              <div class="box-content">Content — the actual text or image here</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =========================================================
+         CONCEPT 4: TYPOGRAPHY
+    ========================================================== -->
+    <div class="lesson-section">
+      <h2>4. Typography</h2>
+      <p>CSS gives you full control over how text looks.</p>
+      <div class="type-demo">
+        <div class="type-row">
+          <div class="type-label">font-family: serif</div>
+          <div class="font-serif">The quick brown fox — Georgia typeface</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">font-family: monospace</div>
+          <div class="font-mono">console.log("Hello, World!") — Courier New</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">font-size: 1.5rem &amp; font-weight: 700</div>
+          <div class="font-large">Large Bold Heading</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">font-size: 0.8rem &amp; color: muted</div>
+          <div class="font-small">Small secondary text — useful for captions and labels</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">letter-spacing: 4px &amp; text-transform: uppercase</div>
+          <div class="font-spaced">Wide spaced text</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">line-height: 2.2 — generous vertical rhythm</div>
+          <div class="font-loose">This paragraph has extra line-height which makes blocks of text much easier to read, especially for longer content on screen.</div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =========================================================
+         CONCEPT 5, 6 & 7: FLEXBOX + HOVER + CSS VARIABLES
+         Demonstrated with the Student Card Component below
+    ========================================================== -->
+    <div class="lesson-section">
+      <h2>5–7. Flexbox, Hover Effects &amp; CSS Variables</h2>
+      <p>
+        The three cards below are laid out using <strong>Flexbox</strong> (<code>display: flex</code>).
+        Their colors come from <strong>CSS Variables</strong> (<code>--primary-color</code>, <code>--accent-color</code>).
+        Hover over any card to see the <strong>hover effect</strong> — it lifts up smoothly.
+      </p>
+
+      <!-- Flex container — makes the three cards sit side by side -->
+      <div class="cards-container">
+
+        <!-- Student Card 1 (default navy theme) -->
+        <div class="student-card">
+          <!-- Avatar with initials -->
+          <div class="student-avatar">AM</div>
+          <div class="student-name">Alice Morgan</div>
+          <div class="student-subject">Web Development</div>
+          <div class="student-divider"></div>
+          <p class="student-bio">Passionate about front-end design. Loves turning ideas into interactive web pages using HTML, CSS, and JavaScript.</p>
+          <span class="student-grade">Grade: A+</span>
+        </div>
+
+        <!-- Student Card 2 (green theme) -->
+        <div class="student-card student-card--green">
+          <div class="student-avatar">BK</div>
+          <div class="student-name">Ben Kowalski</div>
+          <div class="student-subject">Data Science</div>
+          <div class="student-divider"></div>
+          <p class="student-bio">Enjoys finding patterns in data. Building a dashboard app to visualise local weather trends for his final project.</p>
+          <span class="student-grade">Grade: A</span>
+        </div>
+
+        <!-- Student Card 3 (purple theme) -->
+        <div class="student-card student-card--purple">
+          <div class="student-avatar">CL</div>
+          <div class="student-name">Clara Lim</div>
+          <div class="student-subject">UX Design</div>
+          <div class="student-divider"></div>
+          <p class="student-bio">Focused on making apps intuitive and delightful to use. Believes great design is invisible — you just feel it.</p>
+          <span class="student-grade">Grade: A+</span>
+        </div>
+
+      </div><!-- end .cards-container -->
+
+      <p style="text-align:center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted);">
+        Hover over each card to see the hover effect in action.
+      </p>
+    </div>
+
+
+    <!-- Footer note -->
+    <p style="text-align: center; font-size: 0.82rem; color: var(--text-muted); margin-top: 8px;">
+      Lesson 23 — CSS Styling &nbsp;|&nbsp; Chello C# &amp; Web Learning Course
+    </p>
+
+  </div><!-- end #main-container -->
+
+</body>
+</html>

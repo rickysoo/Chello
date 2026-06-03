@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 31: Loading States & Error Handling</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; padding: 24px; }
+    h1 { font-size: 1.6rem; margin-bottom: 4px; color: #1a1a2e; }
+    .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 24px; }
+    .card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 12px; color: #333; }
+
+    /* Toggle buttons */
+    .toggle-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .toggle-btn {
+      padding: 8px 18px; border: 2px solid #ddd; border-radius: 20px;
+      background: white; cursor: pointer; font-size: 0.85rem; font-weight: 500;
+      transition: all 0.2s;
+    }
+    .toggle-btn:hover { border-color: #4a90e2; color: #4a90e2; }
+    .toggle-btn.active { background: #4a90e2; border-color: #4a90e2; color: white; }
+    .toggle-btn.error-btn.active { background: #e74c3c; border-color: #e74c3c; }
+    .toggle-btn.empty-btn.active { background: #f39c12; border-color: #f39c12; }
+    .toggle-btn.loading-btn.active { background: #8e44ad; border-color: #8e44ad; }
+
+    /* Spinner */
+    .spinner-wrap { display: flex; flex-direction: column; align-items: center; padding: 48px 0; gap: 16px; }
+    .spinner {
+      width: 44px; height: 44px; border: 4px solid #e0e0e0;
+      border-top-color: #4a90e2; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-text { color: #888; font-size: 0.95rem; }
+
+    /* Error state */
+    .error-box { display: flex; flex-direction: column; align-items: center; padding: 40px 0; gap: 12px; }
+    .error-icon { font-size: 3rem; }
+    .error-title { font-size: 1.1rem; font-weight: 600; color: #e74c3c; }
+    .error-msg { color: #888; font-size: 0.9rem; text-align: center; max-width: 320px; }
+    .retry-btn {
+      margin-top: 8px; padding: 10px 24px; background: #e74c3c;
+      color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
+      transition: background 0.2s;
+    }
+    .retry-btn:hover { background: #c0392b; }
+
+    /* Empty state */
+    .empty-box { display: flex; flex-direction: column; align-items: center; padding: 40px 0; gap: 10px; }
+    .empty-icon { font-size: 3rem; }
+    .empty-title { font-size: 1.1rem; font-weight: 600; color: #f39c12; }
+    .empty-msg { color: #888; font-size: 0.9rem; text-align: center; max-width: 300px; }
+
+    /* Data table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    thead tr { background: #f8f9fa; }
+    th { text-align: left; padding: 10px 14px; font-weight: 600; color: #555; border-bottom: 2px solid #e9ecef; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbff; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;
+    }
+    .badge-active { background: #e8f5e9; color: #2e7d32; }
+    .badge-inactive { background: #fce4ec; color: #c62828; }
+
+    /* Fetch bar */
+    .fetch-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .fetch-btn {
+      padding: 9px 20px; background: #4a90e2; color: white; border: none;
+      border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
+      transition: background 0.2s;
+    }
+    .fetch-btn:hover { background: #357abd; }
+    .fetch-btn:disabled { background: #aac4e8; cursor: not-allowed; }
+    .fetch-label { font-size: 0.85rem; color: #888; }
+
+    /* Code hint box */
+    .hint { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 16px; margin-top: 16px; font-size: 0.82rem; font-family: 'Consolas', monospace; line-height: 1.7; overflow-x: auto; }
+    .hint .comment { color: #6c7086; }
+    .hint .kw { color: #cba6f7; }
+    .hint .fn { color: #89dceb; }
+    .hint .str { color: #a6e3a1; }
+    .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+    .status-pill {
+      padding: 5px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .pill-loading { background: #f3e8ff; color: #7c3aed; }
+    .pill-ok { background: #e8f5e9; color: #2e7d32; }
+    .pill-err { background: #fce4ec; color: #c62828; }
+    .pill-empty { background: #fff8e1; color: #e65100; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-loading { background: #7c3aed; animation: blink 1s infinite; }
+    .dot-ok { background: #2e7d32; }
+    .dot-err { background: #c62828; }
+    .dot-empty { background: #e65100; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  </style>
+</head>
+<body>
+
+<!--
+  ============================================================
+  LESSON 31: LOADING STATES & ERROR HANDLING IN REACT
+  ============================================================
+
+  WHY THIS MATTERS IN REAL APPS
+  ==============================
+  Every real-world app fetches data from a server (an API).
+  Networks are unpredictable: they can be slow, fail completely,
+  or return empty results. If you don't plan for these cases,
+  your users will stare at a blank screen with no idea what
+  is happening — or worse, they'll see a broken app.
+
+  THE FOUR STATES YOU MUST HANDLE
+  ================================
+  1. LOADING  — You've asked for data but haven't got it yet.
+                Show a spinner so the user knows work is happening.
+
+  2. SUCCESS  — Data arrived! Render it in a table, list, or card.
+
+  3. EMPTY    — Data arrived but there's nothing in it.
+                Don't show a blank table — show a friendly message.
+
+  4. ERROR    — Something went wrong (network down, server error).
+                Show a clear message and a "Try Again" button.
+
+  HOW WE TRACK THESE STATES IN REACT
+  ====================================
+  We use THREE pieces of state:
+
+    const [loading, setLoading] = React.useState(false);
+    // A boolean: true while we're waiting for data.
+
+    const [error, setError]     = React.useState(null);
+    // A string (or null): holds the error message if fetch failed.
+
+    const [data, setData]       = React.useState(null);
+    // The actual data once it arrives (or null before that).
+
+  FETCHING WITH useEffect + try/catch
+  =====================================
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);   // 1. Start the spinner
+      setError(null);     // 2. Clear any old error
+
+      try {
+        const res = await fetch('/api/students');
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const json = await res.json();
+        setData(json);    // 3. Store the data
+      } catch (err) {
+        setError(err.message);  // 4. Store the error message
+      } finally {
+        setLoading(false);      // 5. Always stop the spinner
+      }
+    };
+
+    fetchData();
+  }, []);  // Empty array = run once when the component mounts
+
+  THE finally BLOCK IS IMPORTANT
+  ================================
+  Whether the fetch succeeds or fails, we always want to stop
+  the spinner. That's why setLoading(false) goes in finally —
+  it runs no matter what happens in try or catch.
+
+  RETRY LOGIC
+  ============
+  We can trigger the fetch again by wrapping it in a function
+  and calling that function both on mount and when the user
+  clicks "Try Again". We use a "retryCount" state that we
+  increment on retry — changing it causes useEffect to re-run.
+
+  ============================================================
+-->
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+  // ============================================================
+  // MOCK DATA — pretend this came from a real API
+  // ============================================================
+  const MOCK_STUDENTS = [
+    { id: 1, name: "Alice Tan",    course: "React Fundamentals", grade: "A",  status: "active" },
+    { id: 2, name: "Bob Lim",      course: "Python Basics",       grade: "B+", status: "active" },
+    { id: 3, name: "Carol Ng",     course: "React Fundamentals", grade: "A-", status: "inactive" },
+    { id: 4, name: "David Chen",   course: "SQL for Beginners",   grade: "B",  status: "active" },
+    { id: 5, name: "Eva Wong",     course: "Python Basics",       grade: "A+", status: "active" },
+  ];
+
+  // ============================================================
+  // SPINNER COMPONENT — shown while loading is true
+  // ============================================================
+  function Spinner() {
+    return (
+      <div className="spinner-wrap">
+        <div className="spinner"></div>
+        <span className="spinner-text">Fetching student data…</span>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // ERROR COMPONENT — shown when error state is not null
+  // ============================================================
+  function ErrorView({ message, onRetry }) {
+    return (
+      <div className="error-box">
+        <div className="error-icon">⚠️</div>
+        <div className="error-title">Something went wrong</div>
+        <div className="error-msg">{message || "Could not load data. Please check your connection and try again."}</div>
+        {/* Retry button calls the onRetry function passed from the parent */}
+        <button className="retry-btn" onClick={onRetry}>
+          🔄 Try Again
+        </button>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // EMPTY STATE COMPONENT — shown when data is [] (empty array)
+  // ============================================================
+  function EmptyView() {
+    return (
+      <div className="empty-box">
+        <div className="empty-icon">📭</div>
+        <div className="empty-title">No students found</div>
+        <div className="empty-msg">There are no students enrolled yet. Check back later or add a new student.</div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // DATA TABLE COMPONENT — shown when we have real data
+  // ============================================================
+  function StudentsTable({ students }) {
+    return (
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Grade</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {students.map(s => (
+            <tr key={s.id}>
+              <td>{s.id}</td>
+              <td>{s.name}</td>
+              <td>{s.course}</td>
+              <td><strong>{s.grade}</strong></td>
+              <td>
+                <span className={`badge ${s.status === 'active' ? 'badge-active' : 'badge-inactive'}`}>
+                  {s.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
+  // ============================================================
+  // CURRENT STATE INDICATOR — shows which state is active
+  // ============================================================
+  function StateIndicator({ simMode, loading, error, data }) {
+    // Work out which pill to highlight
+    let pills = [
+      { key: 'loading', label: 'Loading',   cls: 'pill-loading', dotCls: 'dot-loading' },
+      { key: 'error',   label: 'Error',     cls: 'pill-err',     dotCls: 'dot-err' },
+      { key: 'empty',   label: 'Empty',     cls: 'pill-empty',   dotCls: 'dot-empty' },
+      { key: 'normal',  label: 'Success',   cls: 'pill-ok',      dotCls: 'dot-ok' },
+    ];
+    // Which one is currently active?
+    let active = 'normal';
+    if (simMode === 'loading' || loading) active = 'loading';
+    else if (simMode === 'error'   || error)   active = 'error';
+    else if (simMode === 'empty'   || (data && data.length === 0)) active = 'empty';
+
+    return (
+      <div className="status-row">
+        {pills.map(p => (
+          <div key={p.key} className={`status-pill ${p.cls}`} style={{ opacity: active === p.key ? 1 : 0.35 }}>
+            <span className={`dot ${p.dotCls}`}></span>
+            {p.label}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ============================================================
+  // MAIN DASHBOARD COMPONENT
+  // ============================================================
+  function Dashboard() {
+
+    // --- State variables ---
+    // loading: true while we're waiting for the fetch to finish
+    const [loading, setLoading] = React.useState(false);
+    // error: null if everything is fine, or a string with the error message
+    const [error, setError]     = React.useState(null);
+    // data: null before first fetch, then an array of student objects
+    const [data, setData]       = React.useState(null);
+    // retryCount: incrementing this triggers useEffect to re-run (retry logic)
+    const [retryCount, setRetryCount] = React.useState(0);
+    // simMode: lets us manually force a specific state for demonstration
+    const [simMode, setSimMode] = React.useState('normal');
+
+    // -------------------------------------------------------
+    // useEffect: runs when the component mounts AND whenever
+    // retryCount changes (which happens when user clicks Retry)
+    // -------------------------------------------------------
+    React.useEffect(() => {
+      // If the user is simulating a state, skip the real fetch
+      if (simMode !== 'normal') return;
+
+      // Define the async function inside useEffect
+      // (useEffect itself cannot be async)
+      const fetchStudents = async () => {
+        setLoading(true);   // Show the spinner
+        setError(null);     // Clear any previous error
+        setData(null);      // Clear previous data
+
+        try {
+          // Attempt the real API call
+          const res = await fetch('http://localhost:5000/api/students');
+
+          // fetch() does NOT throw for HTTP errors like 404 or 500 —
+          // we have to check res.ok ourselves
+          if (!res.ok) {
+            throw new Error(`Server responded with status ${res.status}`);
+          }
+
+          const json = await res.json();
+          setData(json);  // Store the data — triggers a re-render
+
+        } catch (err) {
+          // Network failure, JSON parse error, or our manual throw above
+          // all end up here. We store the message in error state.
+          setError(err.message);
+
+        } finally {
+          // This block ALWAYS runs — success or failure.
+          // Always stop the spinner.
+          setLoading(false);
+        }
+      };
+
+      fetchStudents();
+
+    }, [retryCount, simMode]);
+    // ^ Re-run when retryCount increments (retry) or simMode changes
+
+    // -------------------------------------------------------
+    // Handler for "Try Again" button — increments retryCount
+    // which causes useEffect to re-run the fetch
+    // -------------------------------------------------------
+    function handleRetry() {
+      setSimMode('normal');
+      setRetryCount(c => c + 1);
+    }
+
+    // -------------------------------------------------------
+    // Handler for simulation toggle buttons
+    // -------------------------------------------------------
+    function handleSimMode(mode) {
+      setSimMode(mode);
+      setError(null);
+      setLoading(false);
+      if (mode === 'normal') {
+        // Trigger a real fetch attempt
+        setRetryCount(c => c + 1);
+      }
+    }
+
+    // -------------------------------------------------------
+    // Decide what to render in the content area
+    // based on current state (sim mode overrides real state)
+    // -------------------------------------------------------
+    function renderContent() {
+      const effectiveLoading = simMode === 'loading' || loading;
+      const effectiveError   = simMode === 'error'
+        ? "Connection refused — could not reach the server."
+        : error;
+      const effectiveData    = simMode === 'empty'
+        ? []
+        : simMode === 'normal' ? data : null;
+
+      if (effectiveLoading)                          return <Spinner />;
+      if (effectiveError)                            return <ErrorView message={effectiveError} onRetry={handleRetry} />;
+      if (effectiveData && effectiveData.length === 0) return <EmptyView />;
+      if (effectiveData && effectiveData.length > 0)   return <StudentsTable students={effectiveData} />;
+
+      // Default: show mock data as "success" example when sim mode is normal
+      // but real fetch hasn't run yet or server is unreachable
+      if (simMode === 'normal' && data === null && !loading && !error) {
+        return (
+          <div>
+            <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '12px' }}>
+              📌 Showing mock data (no API response yet). Click <strong>Fetch from API</strong> to try the real endpoint.
+            </p>
+            <StudentsTable students={MOCK_STUDENTS} />
+          </div>
+        );
+      }
+      return null;
+    }
+
+    return (
+      <div style={{ maxWidth: 820, margin: '0 auto' }}>
+        <h1>📊 Student Dashboard</h1>
+        <p className="subtitle">Lesson 31 — Loading States &amp; Error Handling</p>
+
+        {/* ---- State indicator pills ---- */}
+        <StateIndicator simMode={simMode} loading={loading} error={error} data={data} />
+
+        {/* ---- Manual simulation controls ---- */}
+        <div className="card">
+          <div className="section-title">🎮 Simulate a State</div>
+          <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '12px' }}>
+            Click a button to manually force the dashboard into each state so you can see how it looks.
+          </p>
+          <div className="toggle-bar">
+            <button
+              className={`toggle-btn ${simMode === 'normal' ? 'active' : ''}`}
+              onClick={() => handleSimMode('normal')}
+            >
+              ✅ Normal / Success
+            </button>
+            <button
+              className={`toggle-btn loading-btn ${simMode === 'loading' ? 'active' : ''}`}
+              onClick={() => handleSimMode('loading')}
+            >
+              ⏳ Loading
+            </button>
+            <button
+              className={`toggle-btn error-btn ${simMode === 'error' ? 'active' : ''}`}
+              onClick={() => handleSimMode('error')}
+            >
+              ❌ Error
+            </button>
+            <button
+              className={`toggle-btn empty-btn ${simMode === 'empty' ? 'active' : ''}`}
+              onClick={() => handleSimMode('empty')}
+            >
+              📭 Empty
+            </button>
+          </div>
+        </div>
+
+        {/* ---- Real API fetch controls ---- */}
+        <div className="card">
+          <div className="section-title">🌐 Real API Fetch</div>
+          <div className="fetch-bar">
+            <button
+              className="fetch-btn"
+              disabled={loading || simMode === 'loading'}
+              onClick={() => { setSimMode('normal'); setRetryCount(c => c + 1); }}
+            >
+              {loading ? '⏳ Fetching…' : '🔄 Fetch from API'}
+            </button>
+            <span className="fetch-label">
+              Endpoint: <code>http://localhost:5000/api/students</code>
+            </span>
+          </div>
+        </div>
+
+        {/* ---- Main content area — shows one of the four states ---- */}
+        <div className="card">
+          <div className="section-title">📋 Students</div>
+          {renderContent()}
+        </div>
+
+        {/* ---- Code explanation ---- */}
+        <div className="card">
+          <div className="section-title">💡 How the State Logic Works</div>
+          <div className="hint">
+<span className="comment">// Three state variables control everything</span>{"\n"}
+<span className="kw">const</span> [loading, setLoading] = React.<span className="fn">useState</span>(<span className="str">false</span>);{"\n"}
+<span className="kw">const</span> [error,   setError]   = React.<span className="fn">useState</span>(<span className="str">null</span>);{"\n"}
+<span className="kw">const</span> [data,    setData]    = React.<span className="fn">useState</span>(<span className="str">null</span>);{"\n\n"}
+<span className="comment">// retryCount triggers a re-fetch when incremented</span>{"\n"}
+<span className="kw">const</span> [retryCount, setRetryCount] = React.<span className="fn">useState</span>(<span className="str">0</span>);{"\n\n"}
+React.<span className="fn">useEffect</span>(<span className="kw">() =&gt;</span> {"{"}{"\n"}
+{"  "}<span className="kw">const</span> <span className="fn">fetchData</span> = <span className="kw">async</span> () =&gt; {"{"}{"\n"}
+{"    "}<span className="fn">setLoading</span>(<span className="str">true</span>);   <span className="comment">// show spinner</span>{"\n"}
+{"    "}<span className="fn">setError</span>(<span className="str">null</span>);    <span className="comment">// clear old errors</span>{"\n"}
+{"    "}<span className="kw">try</span> {"{"}{"\n"}
+{"      "}<span className="kw">const</span> res  = <span className="kw">await</span> <span className="fn">fetch</span>(<span className="str">'/api/students'</span>);{"\n"}
+{"      "}<span className="kw">if</span> (!res.ok) <span className="kw">throw new</span> <span className="fn">Error</span>(<span className="str">`Status ${"{res.status}"}`</span>);{"\n"}
+{"      "}<span className="kw">const</span> json = <span className="kw">await</span> res.<span className="fn">json</span>();{"\n"}
+{"      "}<span className="fn">setData</span>(json);       <span className="comment">// store data → re-render</span>{"\n"}
+{"    "}{"}"}  <span className="kw">catch</span> (err) {"{"}{"\n"}
+{"      "}<span className="fn">setError</span>(err.message); <span className="comment">// store error message</span>{"\n"}
+{"    "}{"}"}  <span className="kw">finally</span> {"{"}{"\n"}
+{"      "}<span className="fn">setLoading</span>(<span className="str">false</span>); <span className="comment">// ALWAYS stop spinner</span>{"\n"}
+{"    "}{"}"}{"\n"}
+{"  "}{"}"};{"\n"}
+{"  "}<span className="fn">fetchData</span>();{"\n"}
+{"}"}, [retryCount]); <span className="comment">// re-run when retryCount changes</span>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
+
+  // ============================================================
+  // MOUNT THE APP
+  // ============================================================
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<Dashboard />);
+
+</script>
+</body>
+</html>

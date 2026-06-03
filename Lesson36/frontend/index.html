@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 36 — Student Dashboard</title>
+
+  <!-- React via CDN (no build tool needed — great for learning!) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel: lets us write JSX directly in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* ==========================================
+       Base styles
+    ========================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* ==========================================
+       Login screen
+    ========================================== */
+    .login-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .login-card h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+
+    .login-card p {
+      color: #6b7280;
+      margin-bottom: 32px;
+      font-size: 0.9rem;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus { border-color: #0f3460; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: #0f3460;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+
+    .btn-primary:hover { background: #16213e; }
+    .btn-primary:active { transform: scale(0.99); }
+    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .error-msg {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.875rem;
+      margin-bottom: 16px;
+    }
+
+    .hint-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      color: #1e40af;
+      margin-top: 20px;
+    }
+
+    /* ==========================================
+       Main app layout
+    ========================================== */
+    .app-layout {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Top navigation bar */
+    .navbar {
+      background: #1a1a2e;
+      color: white;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .navbar-brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .navbar-nav {
+      display: flex;
+      gap: 4px;
+    }
+
+    .nav-btn {
+      background: transparent;
+      color: #9ca3af;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .nav-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-btn.active { background: rgba(255,255,255,0.15); color: white; }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-badge {
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+
+    .btn-logout {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 5px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.2s;
+    }
+
+    .btn-logout:hover { background: rgba(239,68,68,0.4); border-color: #ef4444; }
+
+    /* Page content area */
+    .page-content {
+      flex: 1;
+      padding: 32px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin-bottom: 28px;
+    }
+
+    /* ==========================================
+       Stat cards
+    ========================================== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      border-left: 4px solid #e5e7eb;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .stat-card.blue  { border-left-color: #3b82f6; }
+    .stat-card.green { border-left-color: #10b981; }
+    .stat-card.purple{ border-left-color: #8b5cf6; }
+    .stat-card.red   { border-left-color: #ef4444; }
+
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #1a1a2e;
+      line-height: 1;
+    }
+
+    .stat-desc {
+      font-size: 0.78rem;
+      color: #9ca3af;
+      margin-top: 6px;
+    }
+
+    /* ==========================================
+       Dashboard bottom row: grades + podium
+    ========================================== */
+    .dashboard-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 700px) {
+      .dashboard-row { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+    }
+
+    /* Grade breakdown bar chart */
+    .grade-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .grade-label {
+      width: 24px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #374151;
+      flex-shrink: 0;
+    }
+
+    .grade-bar-bg {
+      flex: 1;
+      background: #f3f4f6;
+      border-radius: 999px;
+      height: 20px;
+      overflow: hidden;
+    }
+
+    .grade-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s ease;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+    }
+
+    .grade-bar-fill span {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    .grade-count {
+      width: 24px;
+      text-align: right;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #6b7280;
+      flex-shrink: 0;
+    }
+
+    /* Podium (top 3 students) */
+    .podium {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 12px;
+      padding-top: 12px;
+    }
+
+    .podium-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .podium-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #374151;
+      text-align: center;
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .podium-score {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #1a1a2e;
+    }
+
+    .podium-block {
+      width: 80px;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    /* Heights for 1st, 2nd, 3rd place blocks */
+    .podium-item:nth-child(1) .podium-block { height: 100px; background: #fbbf24; order: 0; }
+    .podium-item:nth-child(2) .podium-block { height: 140px; background: #c0c0c0; }
+    .podium-item:nth-child(3) .podium-block { height: 70px;  background: #cd7f32; }
+
+    /* Reorder so 1st place is in the middle */
+    .podium-item.rank-1 { order: 2; }
+    .podium-item.rank-2 { order: 1; }
+    .podium-item.rank-3 { order: 3; }
+
+    /* ==========================================
+       Students list page
+    ========================================== */
+    .students-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .btn-add {
+      background: #0f3460;
+      color: white;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-add:hover { background: #16213e; }
+
+    .table-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead { background: #f9fafb; }
+
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 0.875rem;
+      color: #374151;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #f9fafb; }
+
+    .score-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .score-a  { background: #d1fae5; color: #065f46; }
+    .score-b  { background: #dbeafe; color: #1e40af; }
+    .score-c  { background: #fef9c3; color: #92400e; }
+    .score-d  { background: #fed7aa; color: #9a3412; }
+    .score-f  { background: #fee2e2; color: #991b1b; }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      color: #6b7280;
+      transition: all 0.15s;
+      margin-right: 4px;
+    }
+
+    .btn-icon:hover { border-color: #9ca3af; color: #374151; }
+    .btn-icon.delete:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+
+    /* ==========================================
+       Modal (add/edit student)
+    ========================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      justify-content: flex-end;
+    }
+
+    .btn-secondary {
+      padding: 9px 18px;
+      background: white;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #374151;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover { background: #f9fafb; }
+
+    /* Loading spinner */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+// ============================================================
+// Lesson 36: Dashboard — Show User Data from DB
+// ============================================================
+// This React app demonstrates:
+//   - JWT-based login flow
+//   - Protected API calls with Authorization header
+//   - Dashboard stats cards
+//   - Grade breakdown bar chart (pure CSS, no library)
+//   - Top 3 students podium
+//   - Full Students CRUD list
+// ============================================================
+
+const API_BASE = "http://localhost:5036";
+
+// ============================================================
+// Helper: grade label and colour from a numeric score
+// ============================================================
+function getGrade(score) {
+  if (score >= 90) return { label: "A", cls: "score-a" };
+  if (score >= 80) return { label: "B", cls: "score-b" };
+  if (score >= 70) return { label: "C", cls: "score-c" };
+  if (score >= 60) return { label: "D", cls: "score-d" };
+  return { label: "F", cls: "score-f" };
+}
+
+// ============================================================
+// Helper: API fetch with JWT token automatically included
+// ============================================================
+async function apiFetch(path, token, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,   // This is the key line!
+      ...(options.headers || {}),
+    },
+  });
+  return res;
+}
+
+// ============================================================
+// LoginPage component
+// ============================================================
+function LoginPage({ onLogin }) {
+  const [username, setUsername] = React.useState("admin");
+  const [password, setPassword] = React.useState("password123");
+  const [error, setError]       = React.useState("");
+  const [loading, setLoading]   = React.useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Store the token — onLogin passes it up to the root App component
+        onLogin(data.token, data.username);
+      } else {
+        setError("Invalid username or password. Try admin / password123.");
+      }
+    } catch (err) {
+      setError("Cannot reach the API. Is the server running on port 5036?");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="login-wrapper">
+      <div className="login-card">
+        <h1>Student Dashboard</h1>
+        <p>Sign in to view your data</p>
+
+        {error && <div className="error-msg">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder="admin"
+            />
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="password123"
+            />
+          </div>
+          <button className="btn-primary" type="submit" disabled={loading}>
+            {loading ? "Signing in…" : "Sign In"}
+          </button>
+        </form>
+
+        <div className="hint-box">
+          Demo credentials: <strong>admin</strong> / <strong>password123</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// DashboardPage component
+// ============================================================
+function DashboardPage({ token }) {
+  const [stats, setStats]     = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError]     = React.useState("");
+
+  React.useEffect(() => {
+    loadStats();
+  }, []);
+
+  async function loadStats() {
+    setLoading(true);
+    try {
+      const res = await apiFetch("/api/dashboard/stats", token);
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      } else {
+        setError("Failed to load stats. Token may have expired.");
+      }
+    } catch {
+      setError("Cannot reach the API.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) return <div className="loading">Loading dashboard…</div>;
+  if (error)   return <div className="error-msg" style={{margin: 24}}>{error}</div>;
+  if (!stats)  return null;
+
+  // Grade bar chart: find the max count so bars scale properly
+  const grades = ["A", "B", "C", "D", "F"];
+  const gradeColours = {
+    A: "#10b981", B: "#3b82f6", C: "#f59e0b", D: "#f97316", F: "#ef4444"
+  };
+  const maxGradeCount = Math.max(...grades.map(g => stats.gradeBreakdown[g] || 0), 1);
+
+  return (
+    <div className="page-content">
+      <div className="page-title">Dashboard</div>
+      <div className="page-subtitle">Overview of all students in the database</div>
+
+      {/* ---- Stat Cards ---- */}
+      <div className="stats-grid">
+        <div className="stat-card blue">
+          <div className="stat-label">Total Students</div>
+          <div className="stat-value">{stats.totalStudents}</div>
+          <div className="stat-desc">enrolled in the system</div>
+        </div>
+        <div className="stat-card green">
+          <div className="stat-label">Average Score</div>
+          <div className="stat-value">{stats.averageScore}</div>
+          <div className="stat-desc">class average out of 100</div>
+        </div>
+        <div className="stat-card purple">
+          <div className="stat-label">Highest Score</div>
+          <div className="stat-value">{stats.highestScore}</div>
+          <div className="stat-desc">best performance</div>
+        </div>
+        <div className="stat-card red">
+          <div className="stat-label">Lowest Score</div>
+          <div className="stat-value">{stats.lowestScore}</div>
+          <div className="stat-desc">needs improvement</div>
+        </div>
+      </div>
+
+      {/* ---- Grade Breakdown + Podium ---- */}
+      <div className="dashboard-row">
+
+        {/* Grade bar chart */}
+        <div className="card">
+          <div className="card-title">Grade Breakdown</div>
+          {grades.map(grade => {
+            const count = stats.gradeBreakdown[grade] || 0;
+            const pct   = Math.round((count / maxGradeCount) * 100);
+            return (
+              <div className="grade-row" key={grade}>
+                <div className="grade-label">{grade}</div>
+                <div className="grade-bar-bg">
+                  <div
+                    className="grade-bar-fill"
+                    style={{ width: `${pct}%`, background: gradeColours[grade] }}
+                  >
+                    {count > 0 && <span>{count}</span>}
+                  </div>
+                </div>
+                <div className="grade-count">{count}</div>
+              </div>
+            );
+          })}
+          <div style={{marginTop: 16, fontSize: "0.75rem", color: "#9ca3af"}}>
+            A≥90 · B≥80 · C≥70 · D≥60 · F&lt;60
+          </div>
+        </div>
+
+        {/* Top 3 podium */}
+        <div className="card">
+          <div className="card-title">Top 3 Students</div>
+          {stats.topStudents.length === 0 ? (
+            <div className="empty-state">No students yet.</div>
+          ) : (
+            <div className="podium">
+              {stats.topStudents.map(s => {
+                const emoji = s.rank === 1 ? "🥇" : s.rank === 2 ? "🥈" : "🥉";
+                return (
+                  <div className={`podium-item rank-${s.rank}`} key={s.rank}>
+                    <div className="podium-name">{s.name}</div>
+                    <div className="podium-score">{s.score}</div>
+                    <div className="podium-block">{emoji}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// StudentsPage component — full CRUD list
+// ============================================================
+function StudentsPage({ token }) {
+  const [students, setStudents] = React.useState([]);
+  const [loading, setLoading]   = React.useState(true);
+  const [showModal, setShowModal] = React.useState(false);
+  const [editStudent, setEditStudent] = React.useState(null); // null = add new
+
+  React.useEffect(() => { loadStudents(); }, []);
+
+  async function loadStudents() {
+    setLoading(true);
+    const res = await apiFetch("/api/students", token);
+    if (res.ok) {
+      const data = await res.json();
+      setStudents(data);
+    }
+    setLoading(false);
+  }
+
+  async function deleteStudent(id, name) {
+    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+    const res = await apiFetch(`/api/students/${id}`, token, { method: "DELETE" });
+    if (res.ok) loadStudents();
+  }
+
+  function openAdd()         { setEditStudent(null); setShowModal(true); }
+  function openEdit(student) { setEditStudent(student); setShowModal(true); }
+  function closeModal()      { setShowModal(false); setEditStudent(null); }
+
+  async function saveStudent(formData) {
+    if (editStudent) {
+      // Update existing
+      await apiFetch(`/api/students/${editStudent.id}`, token, {
+        method: "PUT",
+        body: JSON.stringify(formData),
+      });
+    } else {
+      // Create new
+      await apiFetch("/api/students", token, {
+        method: "POST",
+        body: JSON.stringify(formData),
+      });
+    }
+    closeModal();
+    loadStudents();
+  }
+
+  return (
+    <div className="page-content">
+      <div className="students-header">
+        <div>
+          <div className="page-title">Students</div>
+          <div className="page-subtitle">{students.length} students total</div>
+        </div>
+        <button className="btn-add" onClick={openAdd}>+ Add Student</button>
+      </div>
+
+      <div className="table-card">
+        {loading ? (
+          <div className="loading">Loading students…</div>
+        ) : students.length === 0 ? (
+          <div className="empty-state">No students found.</div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Course</th>
+                <th>Score</th>
+                <th>Enrolled</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {students.map(s => {
+                const grade = getGrade(s.score);
+                return (
+                  <tr key={s.id}>
+                    <td><strong>{s.name}</strong></td>
+                    <td>{s.email}</td>
+                    <td>{s.course}</td>
+                    <td>
+                      <span className={`score-badge ${grade.cls}`}>
+                        {s.score} ({grade.label})
+                      </span>
+                    </td>
+                    <td>{s.enrolledDate}</td>
+                    <td>
+                      <button className="btn-icon" onClick={() => openEdit(s)}>Edit</button>
+                      <button className="btn-icon delete" onClick={() => deleteStudent(s.id, s.name)}>Delete</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {showModal && (
+        <StudentModal
+          student={editStudent}
+          onSave={saveStudent}
+          onClose={closeModal}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// StudentModal — shared add/edit form
+// ============================================================
+function StudentModal({ student, onSave, onClose }) {
+  const [name,   setName]   = React.useState(student?.name   || "");
+  const [email,  setEmail]  = React.useState(student?.email  || "");
+  const [score,  setScore]  = React.useState(student?.score  ?? 75);
+  const [course, setCourse] = React.useState(student?.course || "C# Fundamentals");
+  const [saving, setSaving] = React.useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSaving(true);
+    await onSave({ name, email, score: parseInt(score), course });
+    setSaving(false);
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h2>{student ? "Edit Student" : "Add New Student"}</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Name</label>
+            <input value={name} onChange={e => setName(e.target.value)} required />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+          </div>
+          <div className="form-group">
+            <label>Score (0–100)</label>
+            <input type="number" min="0" max="100" value={score} onChange={e => setScore(e.target.value)} required />
+          </div>
+          <div className="form-group">
+            <label>Course</label>
+            <input value={course} onChange={e => setCourse(e.target.value)} required />
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn-primary" style={{width:"auto"}} disabled={saving}>
+              {saving ? "Saving…" : student ? "Save Changes" : "Add Student"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Root App component — manages login state and navigation
+// ============================================================
+function App() {
+  // token = null means not logged in
+  const [token,    setToken]    = React.useState(null);
+  const [username, setUsername] = React.useState("");
+  const [page,     setPage]     = React.useState("dashboard");
+
+  function handleLogin(tok, user) {
+    setToken(tok);
+    setUsername(user);
+    setPage("dashboard");
+  }
+
+  function handleLogout() {
+    setToken(null);
+    setUsername("");
+  }
+
+  // If no token, show the login screen
+  if (!token) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  // Otherwise show the main app
+  return (
+    <div className="app-layout">
+      {/* Navigation bar */}
+      <nav className="navbar">
+        <div className="navbar-brand">Student Dashboard</div>
+
+        <div className="navbar-nav">
+          <button
+            className={`nav-btn ${page === "dashboard" ? "active" : ""}`}
+            onClick={() => setPage("dashboard")}
+          >
+            Dashboard
+          </button>
+          <button
+            className={`nav-btn ${page === "students" ? "active" : ""}`}
+            onClick={() => setPage("students")}
+          >
+            Students
+          </button>
+        </div>
+
+        <div className="navbar-right">
+          <span className="user-badge">Logged in as <strong>{username}</strong></span>
+          <button className="btn-logout" onClick={handleLogout}>Logout</button>
+        </div>
+      </nav>
+
+      {/* Page content */}
+      {page === "dashboard" && <DashboardPage token={token} />}
+      {page === "students"  && <StudentsPage  token={token} />}
+    </div>
+  );
+}
+
+// ============================================================
+// Mount the React app into the DOM
+// ============================================================
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
+</body>
+</html>

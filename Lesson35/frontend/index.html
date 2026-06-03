@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 35 — JWT Login</title>
+
+  <!-- React and Babel loaded from CDN — no build step needed for learning -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+    }
+
+    h1 { font-size: 1.5rem; color: #1a2b4a; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.1rem; color: #1a2b4a; margin-bottom: 1rem; }
+    .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.3rem; }
+
+    input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #3b82f6; }
+
+    button {
+      width: 100%;
+      padding: 0.7rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 0.6rem;
+    }
+
+    .btn-primary   { background: #1d4ed8; color: white; }
+    .btn-primary:hover   { background: #1e40af; }
+    .btn-secondary { background: #e2e8f0; color: #374151; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-danger    { background: #dc2626; color: white; margin-top: 1rem; }
+    .btn-danger:hover    { background: #b91c1c; }
+
+    .toggle-link {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.5rem;
+    }
+    .toggle-link span {
+      color: #1d4ed8;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .alert {
+      padding: 0.7rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .alert-error   { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.9rem;
+    }
+    .profile-row .key   { color: #64748b; }
+    .profile-row .value { font-weight: 600; color: #1a2b4a; }
+
+    .token-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 0.6rem;
+      font-size: 0.72rem;
+      color: #475569;
+      word-break: break-all;
+      margin-top: 1rem;
+    }
+    .token-label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 0.3rem; }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+// ============================================================
+// HOW AUTHENTICATION WORKS IN A BROWSER:
+//
+// 1. The user logs in → the server returns a JWT token (a long string).
+//
+// 2. We save that token in localStorage.
+//    localStorage is a simple key/value store built into every browser.
+//    It survives page refreshes but is cleared when you call localStorage.removeItem().
+//
+// 3. On every subsequent API call we include the token in the
+//    "Authorization" HTTP header:
+//       Authorization: Bearer eyJhbGci...
+//    The server reads that header, verifies the token signature,
+//    and knows who the caller is — without needing a session or cookie.
+//
+// 4. To "log out" we simply delete the token from localStorage.
+//    The server never has to do anything — the token just stops being sent.
+// ============================================================
+
+const API = "http://localhost:5000";
+
+// ── Utility helpers ──────────────────────────────────────────────────────────
+
+// Save the JWT token to localStorage after login
+function saveToken(token) {
+  localStorage.setItem("jwt_token", token);
+}
+
+// Read the JWT token from localStorage
+function getToken() {
+  return localStorage.getItem("jwt_token");
+}
+
+// Delete the JWT token from localStorage (logout)
+function clearToken() {
+  localStorage.removeItem("jwt_token");
+}
+
+// Build the Authorization header that the API expects
+function authHeader() {
+  const token = getToken();
+  // The format is always:  Authorization: Bearer <token>
+  // "Bearer" just means "the person holding this token is allowed in"
+  return token ? { "Authorization": `Bearer ${token}` } : {};
+}
+
+
+// ── Main App ─────────────────────────────────────────────────────────────────
+
+function App() {
+  // If we already have a token saved, start on the Dashboard page
+  const [view, setView]   = React.useState(getToken() ? "dashboard" : "login");
+
+  return (
+    <div className="card">
+      <h1>Lesson 35</h1>
+      <p className="subtitle">JWT Authentication — Login &amp; Protected Profile</p>
+
+      {view === "login"    && <LoginForm    onSuccess={() => setView("dashboard")} onRegister={() => setView("register")} />}
+      {view === "register" && <RegisterForm onSuccess={() => setView("login")}     onLogin={() => setView("login")} />}
+      {view === "dashboard" && <Dashboard  onLogout={() => { clearToken(); setView("login"); }} />}
+    </div>
+  );
+}
+
+
+// ── Register Form ─────────────────────────────────────────────────────────────
+
+function RegisterForm({ onSuccess, onLogin }) {
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [message,  setMessage]  = React.useState(null);   // { type: "error"|"success", text: "..." }
+  const [loading,  setLoading]  = React.useState(false);
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    setMessage(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessage({ type: "success", text: data.message || "Registered! Please log in." });
+        setTimeout(onSuccess, 1200);   // auto-navigate to login after short delay
+      } else {
+        setMessage({ type: "error", text: data.error || "Registration failed." });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Cannot reach the server. Is the API running?" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <>
+      <h2>Create an Account</h2>
+
+      {message && (
+        <div className={`alert alert-${message.type}`}>{message.text}</div>
+      )}
+
+      <form onSubmit={handleRegister}>
+        <label>Username</label>
+        <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Choose a username" required />
+
+        <label>Password</label>
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" required />
+
+        <button className="btn-primary" disabled={loading}>
+          {loading ? "Registering…" : "Register"}
+        </button>
+      </form>
+
+      <p className="toggle-link">
+        Already have an account? <span onClick={onLogin}>Log in</span>
+      </p>
+    </>
+  );
+}
+
+
+// ── Login Form ────────────────────────────────────────────────────────────────
+
+function LoginForm({ onSuccess, onRegister }) {
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error,    setError]    = React.useState("");
+  const [loading,  setLoading]  = React.useState(false);
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (res.status === 401) {
+        setError("Wrong username or password.");
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Login failed.");
+        setLoading(false);
+        return;
+      }
+
+      // ── KEY STEP: save the token the server returned ──────────────────────
+      // From now on, every protected API call will include this token.
+      // We store it in localStorage so it survives page refreshes.
+      saveToken(data.token);
+
+      onSuccess();   // navigate to Dashboard
+    } catch {
+      setError("Cannot reach the server. Is the API running?");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <>
+      <h2>Log In</h2>
+
+      {error && <div className="alert alert-error">{error}</div>}
+
+      <form onSubmit={handleLogin}>
+        <label>Username</label>
+        <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Your username" required />
+
+        <label>Password</label>
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Your password" required />
+
+        <button className="btn-primary" disabled={loading}>
+          {loading ? "Logging in…" : "Log In"}
+        </button>
+      </form>
+
+      <p className="toggle-link">
+        No account yet? <span onClick={onRegister}>Register</span>
+      </p>
+    </>
+  );
+}
+
+
+// ── Dashboard (protected view) ────────────────────────────────────────────────
+
+function Dashboard({ onLogout }) {
+  const [profile, setProfile] = React.useState(null);
+  const [error,   setError]   = React.useState("");
+
+  // Fetch the user's profile from the protected endpoint when the component loads
+  React.useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await fetch(`${API}/api/profile`, {
+          method: "GET",
+          headers: {
+            // ── KEY STEP: attach the saved token on every protected request ──
+            // The format the server expects is:  Authorization: Bearer <token>
+            // Without this header the server returns 401 Unauthorized.
+            ...authHeader()
+          }
+        });
+
+        if (res.status === 401) {
+          // Token expired or invalid — send user back to login
+          clearToken();
+          setError("Session expired. Please log in again.");
+          return;
+        }
+
+        const data = await res.json();
+        setProfile(data);
+      } catch {
+        setError("Cannot reach the server. Is the API running?");
+      }
+    }
+
+    loadProfile();
+  }, []);
+
+  if (error) {
+    return (
+      <>
+        <div className="alert alert-error">{error}</div>
+        <button className="btn-secondary" onClick={onLogout}>Back to Login</button>
+      </>
+    );
+  }
+
+  if (!profile) {
+    return <p style={{ color: "#64748b", textAlign: "center" }}>Loading profile…</p>;
+  }
+
+  return (
+    <>
+      <h2>Welcome, {profile.username}!</h2>
+      <p className="subtitle">You are logged in. This page is only visible with a valid JWT token.</p>
+
+      <div className="profile-row">
+        <span className="key">User ID</span>
+        <span className="value">{profile.userId}</span>
+      </div>
+      <div className="profile-row">
+        <span className="key">Username</span>
+        <span className="value">{profile.username}</span>
+      </div>
+      <div className="profile-row">
+        <span className="key">Message from server</span>
+        <span className="value">{profile.message}</span>
+      </div>
+
+      {/* Show the stored token so learners can see what it looks like */}
+      <div className="token-label" style={{ marginTop: "1rem" }}>JWT token stored in localStorage:</div>
+      <div className="token-box">{getToken()}</div>
+
+      {/* Logout: just delete the token — no server call needed */}
+      <button className="btn-danger" onClick={() => {
+        // ── KEY STEP: clear the token from localStorage ──────────────────────
+        // After this, authHeader() returns {} so the next API call will fail
+        // with 401 — the user is effectively logged out.
+        clearToken();
+        onLogout();
+      }}>
+        Log Out
+      </button>
+    </>
+  );
+}
+
+
+// ── Mount React ──────────────────────────────────────────────────────────────
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+
+</body>
+</html>

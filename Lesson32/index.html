@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 32: Styling React — CSS Modules Approach</title>
+
+  <!-- Load React, ReactDOM, and Babel from CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!--
+  ============================================================
+  LESSON 32: STYLING REACT — CSS MODULES APPROACH
+  ============================================================
+
+  In React, there are MANY ways to style your components.
+  Each approach has its own trade-offs. Here are the main ones:
+
+  ── 1. INLINE STYLES ────────────────────────────────────────
+  Write styles directly on the element using the style prop.
+  • Uses a JavaScript object (not a CSS string)
+  • Property names are camelCase: backgroundColor, not background-color
+  • Good for: one-off tweaks, truly dynamic values
+  • Bad for: hover effects, media queries, reuse
+
+      <h1 style={{ color: 'navy', fontSize: '24px' }}>Hello</h1>
+
+  ── 2. STYLE OBJECTS ────────────────────────────────────────
+  Define a plain JS object outside (or inside) the component,
+  then reference it via the style prop.
+  • Keeps JSX clean and readable
+  • Easy to reuse the same object across elements
+  • Still JavaScript — no real CSS class isolation
+
+      const cardStyle = { background: '#fff', borderRadius: '8px' };
+      <div style={cardStyle}>...</div>
+
+  ── 3. DYNAMIC STYLES ───────────────────────────────────────
+  Compute styles at render time using state or props.
+  This is one of React's superpowers — styles can react to data.
+  • Merge base styles with conditional overrides using spread (...)
+  • Use ternary operators to pick between styles
+
+      const scoreStyle = {
+        color: score >= 50 ? 'green' : 'red'
+      };
+
+  ── 4. DESIGN SYSTEM / STYLE OBJECT ────────────────────────
+  Organise ALL styles into one big object, grouped by component.
+  This simulates what CSS Modules do (scoped, named styles),
+  but using plain JavaScript — no build tool needed.
+
+      const styles = {
+        header: { background: 'navy', color: '#fff', padding: '16px' },
+        card:   { border: '1px solid #ddd', borderRadius: '8px' },
+        badge:  { borderRadius: '999px', padding: '4px 10px' },
+      };
+
+      <header style={styles.header}>...</header>
+      <div style={styles.card}>...</div>
+
+  WHY CSS MODULES (in a real project)?
+  ─────────────────────────────────────
+  CSS Modules are .module.css files processed by your bundler
+  (Vite, webpack, etc.). They automatically scope class names
+  so styles from one component never leak into another.
+
+      import styles from './Card.module.css';
+      <div className={styles.card}>...</div>
+
+  Because we are using a CDN (no bundler), we simulate the same
+  idea by using a single `styles` object with named keys —
+  the concept is identical: named, scoped, reusable style blocks.
+
+  ============================================================
+  -->
+
+  <style>
+    /* Minimal reset — the rest is handled by JS style objects */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+    // ============================================================
+    // STYLING APPROACH 4 — DESIGN SYSTEM STYLE OBJECT
+    // All app styles in one place, grouped by component.
+    // This is the "CSS Modules" simulation for CDN-based React.
+    // ============================================================
+    const baseStyles = {
+
+      // ── App shell ────────────────────────────────────────────
+      app: {
+        minHeight: '100vh',
+        transition: 'background 0.3s, color 0.3s',
+      },
+
+      // ── Header ───────────────────────────────────────────────
+      header: {
+        background: 'navy',
+        color: '#fff',
+        padding: '20px 32px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+      },
+      headerTitle: {
+        fontSize: '22px',
+        fontWeight: 700,
+        letterSpacing: '0.5px',
+      },
+      headerSubtitle: {
+        fontSize: '13px',
+        opacity: 0.75,
+        marginTop: '2px',
+      },
+
+      // ── Toggle button ────────────────────────────────────────
+      toggleBtn: {
+        border: '2px solid rgba(255,255,255,0.6)',
+        background: 'transparent',
+        color: '#fff',
+        padding: '8px 16px',
+        borderRadius: '20px',
+        cursor: 'pointer',
+        fontSize: '13px',
+        fontWeight: 600,
+        transition: 'background 0.2s',
+        whiteSpace: 'nowrap',
+      },
+
+      // ── Main content area ────────────────────────────────────
+      main: {
+        maxWidth: '1100px',
+        margin: '0 auto',
+        padding: '32px 24px',
+      },
+
+      // ── Section heading ──────────────────────────────────────
+      sectionTitle: {
+        fontSize: '18px',
+        fontWeight: 700,
+        marginBottom: '4px',
+      },
+      sectionSubtitle: {
+        fontSize: '13px',
+        marginBottom: '24px',
+        opacity: 0.6,
+      },
+
+      // ── Grid ─────────────────────────────────────────────────
+      grid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+        gap: '20px',
+        marginBottom: '40px',
+      },
+
+      // ── Student card ─────────────────────────────────────────
+      card: {
+        borderRadius: '12px',
+        padding: '20px',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        border: '1px solid transparent',
+        transition: 'box-shadow 0.2s, transform 0.2s',
+      },
+      cardHeader: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '16px',
+      },
+      avatar: {
+        width: '44px',
+        height: '44px',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '18px',
+        fontWeight: 700,
+        flexShrink: 0,
+        color: '#fff',
+      },
+      studentName: {
+        fontSize: '16px',
+        fontWeight: 700,
+        marginBottom: '2px',
+      },
+      studentCourse: {
+        fontSize: '12px',
+        opacity: 0.55,
+      },
+      scoreRow: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '10px',
+      },
+      scoreLabel: {
+        fontSize: '13px',
+        opacity: 0.65,
+      },
+      progressBar: {
+        height: '6px',
+        borderRadius: '3px',
+        background: '#e5e7eb',
+        overflow: 'hidden',
+        marginBottom: '16px',
+      },
+      progressFill: {
+        height: '100%',
+        borderRadius: '3px',
+        transition: 'width 0.5s ease',
+      },
+
+      // ── Score badge ──────────────────────────────────────────
+      badge: {
+        display: 'inline-block',
+        borderRadius: '999px',
+        padding: '4px 12px',
+        fontSize: '13px',
+        fontWeight: 700,
+        color: '#fff',
+      },
+
+      // ── Stats bar ────────────────────────────────────────────
+      statsBar: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+        gap: '16px',
+        marginBottom: '40px',
+      },
+      statCard: {
+        borderRadius: '10px',
+        padding: '18px 20px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+      },
+      statValue: {
+        fontSize: '28px',
+        fontWeight: 800,
+        marginBottom: '4px',
+      },
+      statLabel: {
+        fontSize: '12px',
+        opacity: 0.6,
+        fontWeight: 500,
+      },
+
+      // ── Legend box ───────────────────────────────────────────
+      legend: {
+        borderRadius: '10px',
+        padding: '20px',
+        marginBottom: '32px',
+      },
+      legendTitle: {
+        fontSize: '14px',
+        fontWeight: 700,
+        marginBottom: '12px',
+      },
+      legendRow: {
+        display: 'flex',
+        gap: '16px',
+        flexWrap: 'wrap',
+      },
+      legendItem: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        fontSize: '13px',
+      },
+      legendDot: {
+        width: '10px',
+        height: '10px',
+        borderRadius: '50%',
+        flexShrink: 0,
+      },
+    };
+
+    // ============================================================
+    // HELPER — grade logic
+    // Determines letter grade and colour based on a numeric score.
+    // This is a pure function — easy to test and reuse.
+    // ============================================================
+    function getGrade(score) {
+      if (score >= 90) return { letter: 'A', color: '#16a34a' }; // green
+      if (score >= 75) return { letter: 'B', color: '#2563eb' }; // blue
+      if (score >= 60) return { letter: 'C', color: '#d97706' }; // orange
+      return { letter: 'F', color: '#dc2626' };                   // red
+    }
+
+    // Avatar background colours — one per student for variety
+    const avatarColors = ['#7c3aed','#0891b2','#059669','#d97706','#dc2626','#2563eb'];
+
+    // ============================================================
+    // COMPONENT — ScoreBadge
+    // STYLING APPROACH 3: Dynamic styles
+    // The badge colour reacts to the score value at render time.
+    // ============================================================
+    function ScoreBadge({ score }) {
+      const { letter, color } = getGrade(score);
+
+      // Merge the base badge style with a dynamic background colour
+      const badgeStyle = {
+        ...baseStyles.badge,          // spread base styles
+        background: color,            // override background dynamically
+      };
+
+      return <span style={badgeStyle}>{letter} — {score}%</span>;
+    }
+
+    // ============================================================
+    // COMPONENT — StudentCard
+    // Uses style objects (approach 2) and dynamic styles (approach 3).
+    // ============================================================
+    function StudentCard({ student, dark }) {
+      const { letter, color } = getGrade(student.score);
+
+      // APPROACH 3: card background changes based on dark mode state
+      const cardStyle = {
+        ...baseStyles.card,
+        background: dark ? '#1e293b' : '#fff',
+        borderColor: dark ? '#334155' : '#e5e7eb',
+        color: dark ? '#f1f5f9' : '#1e293b',
+      };
+
+      // Progress bar fill colour matches the grade colour
+      const fillStyle = {
+        ...baseStyles.progressFill,
+        width: student.score + '%',
+        background: color,
+      };
+
+      // Avatar gets a colour from our palette using the student index
+      const avatarStyle = {
+        ...baseStyles.avatar,
+        background: avatarColors[student.id % avatarColors.length],
+      };
+
+      return (
+        <div style={cardStyle}>
+          <div style={baseStyles.cardHeader}>
+            {/* APPROACH 1: inline style for the initial letter */}
+            <div style={avatarStyle}>
+              {student.name.charAt(0)}
+            </div>
+            <div>
+              <div style={baseStyles.studentName}>{student.name}</div>
+              <div style={baseStyles.studentCourse}>{student.course}</div>
+            </div>
+          </div>
+
+          {/* Score row with label and badge */}
+          <div style={baseStyles.scoreRow}>
+            <span style={baseStyles.scoreLabel}>Final Score</span>
+            <ScoreBadge score={student.score} />
+          </div>
+
+          {/* Progress bar — width driven by score */}
+          <div style={baseStyles.progressBar}>
+            <div style={fillStyle}></div>
+          </div>
+
+          {/* Status line — APPROACH 3: text changes based on pass/fail */}
+          <div style={{
+            fontSize: '12px',
+            fontWeight: 600,
+            color: student.score >= 60 ? '#16a34a' : '#dc2626',
+          }}>
+            {student.score >= 60 ? '✓ Passed' : '✗ Did not pass'}
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // COMPONENT — StatCard
+    // A simple stat display using design-system styles (approach 4).
+    // ============================================================
+    function StatCard({ value, label, accent, dark }) {
+      const cardStyle = {
+        ...baseStyles.statCard,
+        background: dark ? '#1e293b' : '#fff',
+        color: dark ? '#f1f5f9' : '#1e293b',
+        borderLeft: `4px solid ${accent}`,
+      };
+      const valueStyle = {
+        ...baseStyles.statValue,
+        color: accent,
+      };
+      return (
+        <div style={cardStyle}>
+          <div style={valueStyle}>{value}</div>
+          <div style={baseStyles.statLabel}>{label}</div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // DATA — sample students
+    // ============================================================
+    const students = [
+      { id: 0, name: 'Alice Tan',    course: 'Web Development',   score: 92 },
+      { id: 1, name: 'Ben Lim',      course: 'Data Science',       score: 78 },
+      { id: 2, name: 'Chloe Wong',   course: 'UX Design',          score: 64 },
+      { id: 3, name: 'David Ng',     course: 'Cloud Computing',    score: 55 },
+      { id: 4, name: 'Eva Rossi',    course: 'Cybersecurity',      score: 88 },
+      { id: 5, name: 'Faiz Rahman',  course: 'Machine Learning',   score: 71 },
+    ];
+
+    // ============================================================
+    // ROOT COMPONENT — App
+    // Manages dark mode state and composes the full dashboard.
+    // ============================================================
+    function App() {
+      // State drives the dark/light theme — classic dynamic styling
+      const [dark, setDark] = React.useState(false);
+
+      // ── Compute summary stats ─────────────────────────────────
+      const avg   = Math.round(students.reduce((s, st) => s + st.score, 0) / students.length);
+      const passed = students.filter(s => s.score >= 60).length;
+      const gradeA = students.filter(s => s.score >= 90).length;
+
+      // ── APPROACH 3: app background reacts to dark state ──────
+      const appStyle = {
+        ...baseStyles.app,
+        background: dark ? '#0f172a' : '#f8fafc',
+        color:      dark ? '#f1f5f9' : '#1e293b',
+      };
+
+      // ── Legend background adapts to theme ────────────────────
+      const legendStyle = {
+        ...baseStyles.legend,
+        background: dark ? '#1e293b' : '#fff',
+        border: `1px solid ${dark ? '#334155' : '#e5e7eb'}`,
+      };
+
+      return (
+        <div style={appStyle}>
+
+          {/* ── APPROACH 4: header uses design-system style ──── */}
+          <header style={baseStyles.header}>
+            <div>
+              {/* APPROACH 1: inline style for a one-off font size */}
+              <div style={{ ...baseStyles.headerTitle, fontSize: '20px' }}>
+                Student Dashboard
+              </div>
+              <div style={baseStyles.headerSubtitle}>
+                Lesson 32 · Styling React — 4 Approaches Demonstrated
+              </div>
+            </div>
+
+            {/* Toggle button — click changes dark state */}
+            <button
+              style={baseStyles.toggleBtn}
+              onClick={() => setDark(d => !d)}
+            >
+              {dark ? '☀ Light Mode' : '☾ Dark Mode'}
+            </button>
+          </header>
+
+          <main style={baseStyles.main}>
+
+            {/* ── Stats bar ─────────────────────────────────── */}
+            <div style={baseStyles.sectionTitle}>Class Overview</div>
+            <div style={baseStyles.sectionSubtitle}>
+              Real-time stats — colours driven by design-system tokens
+            </div>
+            <div style={baseStyles.statsBar}>
+              <StatCard value={students.length} label="Total Students" accent="#7c3aed" dark={dark} />
+              <StatCard value={avg + '%'}        label="Class Average"  accent="#2563eb" dark={dark} />
+              <StatCard value={passed}           label="Passed"         accent="#16a34a" dark={dark} />
+              <StatCard value={gradeA}           label="Grade A"        accent="#d97706" dark={dark} />
+            </div>
+
+            {/* ── Grade colour legend ───────────────────────── */}
+            <div style={legendStyle}>
+              <div style={{ ...baseStyles.legendTitle, color: dark ? '#f1f5f9' : '#1e293b' }}>
+                Grade Colour Legend — Approach 3: Dynamic Styles
+              </div>
+              <div style={baseStyles.legendRow}>
+                {[
+                  { label: 'A  (90–100%)', color: '#16a34a' },
+                  { label: 'B  (75–89%)',  color: '#2563eb' },
+                  { label: 'C  (60–74%)',  color: '#d97706' },
+                  { label: 'F  (0–59%)',   color: '#dc2626' },
+                ].map(item => (
+                  <div key={item.label} style={baseStyles.legendItem}>
+                    <div style={{ ...baseStyles.legendDot, background: item.color }}></div>
+                    <span style={{ color: dark ? '#cbd5e1' : '#475569' }}>{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Student cards grid ────────────────────────── */}
+            <div style={baseStyles.sectionTitle}>Student Results</div>
+            <div style={baseStyles.sectionSubtitle}>
+              Cards use Style Objects (approach 2) + Dynamic Styles (approach 3)
+            </div>
+            <div style={baseStyles.grid}>
+              {students.map(student => (
+                <StudentCard key={student.id} student={student} dark={dark} />
+              ))}
+            </div>
+
+            {/* ── Summary of techniques ─────────────────────── */}
+            <div style={{
+              // APPROACH 2: style object defined inline (anonymous)
+              borderRadius: '10px',
+              padding: '24px',
+              background: dark ? '#1e293b' : '#fff',
+              border: `1px solid ${dark ? '#334155' : '#e5e7eb'}`,
+              color: dark ? '#f1f5f9' : '#1e293b',
+            }}>
+              {/* APPROACH 1: inline style for heading colour */}
+              <h2 style={{ color: 'navy', marginBottom: '16px', fontSize: '16px' }}>
+                Styling Approaches Used in This File
+              </h2>
+              {[
+                { num: '1', title: 'Inline Styles',         desc: 'style={{ ... }} directly on an element — best for one-off overrides.' },
+                { num: '2', title: 'Style Objects',         desc: 'const cardStyle = { ... } defined outside JSX — keeps JSX readable.' },
+                { num: '3', title: 'Dynamic Styles',        desc: 'Computed at render time from state/props — the React superpower.' },
+                { num: '4', title: 'Design System Object',  desc: 'All styles in one baseStyles object, grouped by component — simulates CSS Modules.' },
+              ].map(item => (
+                <div key={item.num} style={{
+                  display: 'flex',
+                  gap: '12px',
+                  marginBottom: '12px',
+                  alignItems: 'flex-start',
+                }}>
+                  <span style={{
+                    background: 'navy',
+                    color: '#fff',
+                    borderRadius: '50%',
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}>{item.num}</span>
+                  <div>
+                    <strong style={{ fontSize: '14px' }}>{item.title}</strong>
+                    <div style={{ fontSize: '13px', opacity: 0.65, marginTop: '2px' }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </main>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // Mount the app
+    // ============================================================
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+
+  </script>
+</body>
+</html>

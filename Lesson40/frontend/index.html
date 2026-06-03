@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Manager — Full-Stack C# + React App</title>
+
+  <!--
+    ============================================================
+    LESSON 40: DEPLOY FRONTEND — Host React App on Vercel
+    ============================================================
+
+    This is the FINAL file of the entire 40-lesson course.
+    It brings together every concept we have learned:
+
+    Lessons 01-05  : C# basics (the backend is built on these)
+    Lessons 06-10  : Methods, arrays, SQL (our API uses all of these)
+    Lessons 11-15  : OOP / classes (our C# models are classes)
+    Lessons 16-20  : Async, LINQ, generics (used in the API controllers)
+    Lessons 21-25  : ASP.NET Core Web API (what our backend IS)
+    Lessons 26-30  : Entity Framework / database (where data lives)
+    Lessons 31-35  : JWT authentication (login security)
+    Lessons 36-38  : React frontend — fetch, state, components
+    Lesson 39      : Deploy backend to Railway
+    Lesson 40      : Deploy frontend to Vercel (you are here)
+
+    HOW TO SWITCH BETWEEN LOCAL AND PRODUCTION:
+    Change API_BASE_URL below. That is the only line you need to edit.
+    ============================================================
+  -->
+
+  <!-- React and ReactDOM loaded from CDN — no build tools needed (Lesson 36) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Babel for JSX transformation in the browser (development convenience) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* ============================================================
+       GLOBAL STYLES
+       Navy / white color scheme — professional and clean
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #1a2744;
+      --navy-light: #243361;
+      --blue:       #2563eb;
+      --blue-hover: #1d4ed8;
+      --red:        #dc2626;
+      --red-hover:  #b91c1c;
+      --green:      #16a34a;
+      --yellow:     #d97706;
+      --gray-50:    #f9fafb;
+      --gray-100:   #f3f4f6;
+      --gray-200:   #e5e7eb;
+      --gray-400:   #9ca3af;
+      --gray-600:   #4b5563;
+      --gray-800:   #1f2937;
+      --white:      #ffffff;
+      --shadow:     0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+      --shadow-lg:  0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+      --radius:     8px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ---- Layout ---- */
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .navbar {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-lg);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .navbar-brand { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+    .navbar-brand span { color: #60a5fa; }
+    .navbar-user { display: flex; align-items: center; gap: 1rem; font-size: 0.875rem; }
+
+    .main-content { flex: 1; padding: 2rem 1.5rem; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+    /* ---- Cards ---- */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--gray-100);
+    }
+
+    /* ---- Stats row ---- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-value { font-size: 2rem; font-weight: 700; color: var(--navy); }
+    .stat-label { font-size: 0.8rem; color: var(--gray-600); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+
+    /* ---- Forms ---- */
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--gray-600); margin-bottom: 0.375rem; }
+    .form-input {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      background: var(--white);
+    }
+    .form-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* ---- Buttons ---- */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.625rem 1.25rem;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--blue); color: var(--white); }
+    .btn-primary:hover { background: var(--blue-hover); }
+    .btn-danger  { background: var(--red); color: var(--white); }
+    .btn-danger:hover  { background: var(--red-hover); }
+    .btn-ghost  { background: var(--gray-100); color: var(--gray-800); }
+    .btn-ghost:hover  { background: var(--gray-200); }
+    .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8rem; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ---- Table ---- */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    thead { background: var(--navy); color: var(--white); }
+    thead th { padding: 0.75rem 1rem; text-align: left; font-weight: 600; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--gray-100); }
+    tbody tr:hover { background: var(--gray-50); }
+    tbody td { padding: 0.75rem 1rem; vertical-align: middle; }
+    .actions { display: flex; gap: 0.5rem; }
+
+    /* ---- Badges ---- */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-active   { background: #dcfce7; color: #15803d; }
+    .badge-inactive { background: #fee2e2; color: #b91c1c; }
+    .badge-pending  { background: #fef3c7; color: #92400e; }
+
+    /* ---- Search bar ---- */
+    .search-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: flex-end; }
+    .search-row .form-input { max-width: 260px; }
+
+    /* ---- Login page ---- */
+    .login-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .login-card {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-logo { text-align: center; margin-bottom: 2rem; }
+    .login-logo h1 { font-size: 1.75rem; font-weight: 700; color: var(--navy); }
+    .login-logo h1 span { color: var(--blue); }
+    .login-logo p { color: var(--gray-600); font-size: 0.9rem; margin-top: 0.25rem; }
+
+    /* ---- Alerts ---- */
+    .alert { padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.875rem; margin-bottom: 1rem; }
+    .alert-error  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .alert-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .alert-info   { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+    /* ---- Loading spinner ---- */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    .spinner-dark {
+      border-color: rgba(0,0,0,0.1);
+      border-top-color: var(--navy);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-row { text-align: center; padding: 3rem; color: var(--gray-400); }
+
+    /* ---- Modal ---- */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200;
+      padding: 1rem;
+    }
+    .modal {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      padding: 2rem;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .modal-title { font-size: 1.125rem; font-weight: 700; color: var(--navy); }
+    .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--gray-400); line-height: 1; }
+    .modal-close:hover { color: var(--gray-800); }
+    .modal-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+    /* ---- Empty state ---- */
+    .empty { text-align: center; padding: 3rem; color: var(--gray-400); }
+    .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+
+    /* ---- Pagination ---- */
+    .pagination { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap; }
+    .page-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--gray-200); border-radius: var(--radius); background: var(--white); cursor: pointer; font-size: 0.875rem; }
+    .page-btn.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+    .page-btn:hover:not(.active) { background: var(--gray-100); }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      .main-content { padding: 1rem; }
+      .card { padding: 1rem; }
+      .hide-mobile { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+  // ============================================================
+  // CONFIGURATION
+  // ============================================================
+  // Change this ONE constant to switch between local development
+  // and your live production backend on Railway.
+  //
+  // Local:      "http://localhost:5000"
+  // Production: "https://your-backend.railway.app"
+  //
+  // This pattern (a config constant at the top) is the simplest
+  // way to manage different environments in a plain HTML app.
+  // ============================================================
+  const API_BASE_URL = "http://localhost:5000";
+
+  // ============================================================
+  // API HELPER FUNCTIONS (Lesson 37 — fetch API)
+  // ============================================================
+  // These functions wrap the browser's built-in fetch() so we
+  // do not repeat boilerplate (URL, headers, token) everywhere.
+
+  function getToken() {
+    return localStorage.getItem("jwt_token"); // Lesson 35 — storing JWT
+  }
+
+  function authHeaders() {
+    const token = getToken();
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": `Bearer ${token}` } : {})
+    };
+  }
+
+  async function apiGet(path) {
+    const res = await fetch(API_BASE_URL + path, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+    return res.json();
+  }
+
+  async function apiPost(path, body) {
+    const res = await fetch(API_BASE_URL + path, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: "Request failed" }));
+      throw new Error(err.message || `POST ${path} failed: ${res.status}`);
+    }
+    return res.json();
+  }
+
+  async function apiPut(path, body) {
+    const res = await fetch(API_BASE_URL + path, {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: "Request failed" }));
+      throw new Error(err.message || `PUT ${path} failed: ${res.status}`);
+    }
+    return res.json();
+  }
+
+  async function apiDelete(path) {
+    const res = await fetch(API_BASE_URL + path, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+    if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
+  }
+
+  // ============================================================
+  // REACT HOOKS ALIASES (Lesson 36 — React via CDN)
+  // ============================================================
+  const { useState, useEffect, useCallback, useRef } = React;
+
+  // ============================================================
+  // COMPONENT: LoginPage
+  // ============================================================
+  // Lessons applied:
+  //   - React state (useState) — Lesson 36
+  //   - fetch / async-await — Lessons 17, 37
+  //   - JWT token storage — Lesson 35
+  //   - Error handling — Lesson 07
+
+  function LoginPage({ onLogin }) {
+    const [email, setEmail]       = useState("");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading]   = useState(false);
+    const [error, setError]       = useState("");
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      setError("");
+      setLoading(true);
+      try {
+        // POST /api/auth/login — returns { token, user }
+        const data = await apiPost("/api/auth/login", { email, password });
+        localStorage.setItem("jwt_token", data.token);
+        onLogin(data.user);
+      } catch (err) {
+        setError(err.message || "Login failed. Check your credentials.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    return (
+      <div className="login-container">
+        <div className="login-card">
+          <div className="login-logo">
+            <h1>Student<span>Manager</span></h1>
+            <p>Full-stack app — built in 40 lessons</p>
+          </div>
+
+          {error && <div className="alert alert-error">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input
+                className="form-input"
+                type="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <input
+                className="form-input"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={loading}
+              style={{ width: "100%", justifyContent: "center", marginTop: "0.5rem" }}
+            >
+              {loading ? <><span className="spinner"></span> Signing in...</> : "Sign In"}
+            </button>
+          </form>
+
+          <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.8rem", color: "var(--gray-400)" }}>
+            Lesson 40 — Deploy to Vercel
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // COMPONENT: StatsBar
+  // ============================================================
+  // Displays summary numbers fetched from the API.
+  // Demonstrates conditional rendering and loading states.
+
+  function StatsBar({ students }) {
+    const total    = students.length;
+    const active   = students.filter(s => s.status === "Active").length;
+    const inactive = students.filter(s => s.status === "Inactive").length;
+    const avgScore = total > 0
+      ? Math.round(students.reduce((sum, s) => sum + (s.score || 0), 0) / total)
+      : 0;
+
+    return (
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-value">{total}</div>
+          <div className="stat-label">Total Students</div>
+        </div>
+        <div className="stat-card green">
+          <div className="stat-value">{active}</div>
+          <div className="stat-label">Active</div>
+        </div>
+        <div className="stat-card" style={{ "--val-color": "var(--red)" }}>
+          <div className="stat-value" style={{ color: "var(--red)" }}>{inactive}</div>
+          <div className="stat-label">Inactive</div>
+        </div>
+        <div className="stat-card blue">
+          <div className="stat-value">{avgScore}</div>
+          <div className="stat-label">Avg Score</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // COMPONENT: StudentModal (Add / Edit)
+  // ============================================================
+  // A modal form for creating or editing a student record.
+  // Uses controlled inputs — every keystroke updates React state.
+
+  function StudentModal({ student, onSave, onClose }) {
+    const isEdit = !!student;
+
+    // Pre-fill form if editing, otherwise start blank
+    const [form, setForm] = useState({
+      name:    student?.name    || "",
+      email:   student?.email   || "",
+      course:  student?.course  || "",
+      score:   student?.score   ?? "",
+      status:  student?.status  || "Active",
+    });
+    const [loading, setLoading] = useState(false);
+    const [error, setError]     = useState("");
+
+    function update(field, value) {
+      setForm(prev => ({ ...prev, [field]: value }));
+    }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      setError("");
+      setLoading(true);
+      try {
+        const payload = { ...form, score: Number(form.score) };
+        if (isEdit) {
+          // PUT /api/students/{id} — update existing (Lesson 29)
+          await apiPut(`/api/students/${student.id}`, payload);
+        } else {
+          // POST /api/students — create new (Lesson 28)
+          await apiPost("/api/students", payload);
+        }
+        onSave();
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    return (
+      <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal">
+          <div className="modal-header">
+            <span className="modal-title">{isEdit ? "Edit Student" : "Add New Student"}</span>
+            <button className="modal-close" onClick={onClose}>&times;</button>
+          </div>
+
+          {error && <div className="alert alert-error">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <input className="form-input" placeholder="Jane Smith"
+                  value={form.name} onChange={e => update("name", e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input className="form-input" type="email" placeholder="jane@example.com"
+                  value={form.email} onChange={e => update("email", e.target.value)} required />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Course</label>
+                <input className="form-input" placeholder="C# Fundamentals"
+                  value={form.course} onChange={e => update("course", e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Score (0-100)</label>
+                <input className="form-input" type="number" min="0" max="100"
+                  placeholder="85"
+                  value={form.score} onChange={e => update("score", e.target.value)} required />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Status</label>
+              <select className="form-input"
+                value={form.status} onChange={e => update("status", e.target.value)}>
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>Pending</option>
+              </select>
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading
+                  ? <><span className="spinner"></span> Saving...</>
+                  : isEdit ? "Save Changes" : "Add Student"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // COMPONENT: DeleteConfirmModal
+  // ============================================================
+
+  function DeleteConfirmModal({ student, onConfirm, onClose }) {
+    const [loading, setLoading] = useState(false);
+
+    async function handleDelete() {
+      setLoading(true);
+      await onConfirm(student.id);
+      setLoading(false);
+    }
+
+    return (
+      <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal" style={{ maxWidth: 400 }}>
+          <div className="modal-header">
+            <span className="modal-title">Delete Student</span>
+            <button className="modal-close" onClick={onClose}>&times;</button>
+          </div>
+          <p style={{ color: "var(--gray-600)" }}>
+            Are you sure you want to delete <strong>{student.name}</strong>? This cannot be undone.
+          </p>
+          <div className="modal-footer">
+            <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+            <button className="btn btn-danger" onClick={handleDelete} disabled={loading}>
+              {loading ? <><span className="spinner"></span> Deleting...</> : "Delete"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // COMPONENT: StudentsTable
+  // ============================================================
+  // Displays the list of students with search, filter, and
+  // pagination. Demonstrates array methods (Lesson 08) and
+  // LINQ-style filtering applied in JavaScript.
+
+  const PAGE_SIZE = 10;
+
+  function StudentsTable({ students, onEdit, onDelete }) {
+    const [search, setSearch]   = useState("");
+    const [status, setStatus]   = useState("All");
+    const [page, setPage]       = useState(1);
+
+    // Filter + search (like LINQ Where() from Lesson 16)
+    const filtered = students.filter(s => {
+      const matchSearch = search === "" ||
+        s.name.toLowerCase().includes(search.toLowerCase()) ||
+        s.email.toLowerCase().includes(search.toLowerCase()) ||
+        s.course.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = status === "All" || s.status === status;
+      return matchSearch && matchStatus;
+    });
+
+    // Pagination (slice = like LINQ Skip().Take() from Lesson 16)
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    // Reset to page 1 when filters change
+    useEffect(() => { setPage(1); }, [search, status]);
+
+    function statusBadge(s) {
+      const cls = s === "Active" ? "badge-active" : s === "Inactive" ? "badge-inactive" : "badge-pending";
+      return <span className={`badge ${cls}`}>{s}</span>;
+    }
+
+    return (
+      <div className="card">
+        <div className="card-title">Students ({filtered.length})</div>
+
+        {/* Search & Filter bar */}
+        <div className="search-row">
+          <input
+            className="form-input"
+            placeholder="Search name, email, course..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <select
+            className="form-input"
+            style={{ maxWidth: 160 }}
+            value={status}
+            onChange={e => setStatus(e.target.value)}
+          >
+            <option value="All">All Statuses</option>
+            <option>Active</option>
+            <option>Inactive</option>
+            <option>Pending</option>
+          </select>
+          {(search || status !== "All") && (
+            <button className="btn btn-ghost btn-sm" onClick={() => { setSearch(""); setStatus("All"); }}>
+              Clear
+            </button>
+          )}
+        </div>
+
+        {paged.length === 0 ? (
+          <div className="empty">
+            <div className="empty-icon">👤</div>
+            <p>{search || status !== "All" ? "No students match your search." : "No students yet. Add one!"}</p>
+          </div>
+        ) : (
+          <>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th className="hide-mobile">Course</th>
+                    <th className="hide-mobile">Score</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map(student => (
+                    <tr key={student.id}>
+                      <td style={{ fontWeight: 500 }}>{student.name}</td>
+                      <td style={{ color: "var(--gray-600)", fontSize: "0.85rem" }}>{student.email}</td>
+                      <td className="hide-mobile">{student.course}</td>
+                      <td className="hide-mobile">
+                        <span style={{
+                          fontWeight: 600,
+                          color: student.score >= 80 ? "var(--green)"
+                               : student.score >= 60 ? "var(--yellow)"
+                               : "var(--red)"
+                        }}>
+                          {student.score}
+                        </span>
+                      </td>
+                      <td>{statusBadge(student.status)}</td>
+                      <td>
+                        <div className="actions">
+                          <button className="btn btn-ghost btn-sm" onClick={() => onEdit(student)}>Edit</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => onDelete(student)}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="pagination">
+                <button className="page-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                  &laquo;
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                  <button key={n} className={`page-btn ${n === page ? "active" : ""}`}
+                    onClick={() => setPage(n)}>{n}</button>
+                ))}
+                <button className="page-btn" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
+                  &raquo;
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ============================================================
+  // COMPONENT: Navbar
+  // ============================================================
+
+  function Navbar({ user, onLogout }) {
+    return (
+      <nav className="navbar">
+        <div className="navbar-brand">
+          Student<span>Manager</span>
+        </div>
+        <div className="navbar-user">
+          <span className="hide-mobile" style={{ color: "#93c5fd" }}>{user?.email}</span>
+          <button className="btn btn-ghost btn-sm" onClick={onLogout}>
+            Sign Out
+          </button>
+        </div>
+      </nav>
+    );
+  }
+
+  // ============================================================
+  // COMPONENT: Dashboard (main app after login)
+  // ============================================================
+  // This is the root of the authenticated experience.
+  // It owns the students list in state and passes it down.
+  //
+  // Data flow: Dashboard fetches data --> passes to children.
+  // Events flow up: children call onEdit/onDelete callbacks.
+  // This is the standard React pattern (Lesson 38).
+
+  function Dashboard({ user, onLogout }) {
+    const [students, setStudents] = useState([]);
+    const [loading, setLoading]   = useState(true);
+    const [error, setError]       = useState("");
+
+    // Modal state
+    const [showAdd, setShowAdd]       = useState(false);
+    const [editStudent, setEditStudent] = useState(null);
+    const [deleteStudent, setDeleteStudent] = useState(null);
+
+    // Fetch students from the backend API (Lesson 37 — fetch)
+    // useCallback so we can also call this after mutations
+    const fetchStudents = useCallback(async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await apiGet("/api/students");
+        setStudents(data);
+      } catch (err) {
+        setError("Could not load students. Is the backend running?");
+      } finally {
+        setLoading(false);
+      }
+    }, []);
+
+    // useEffect runs once when the component mounts (Lesson 36)
+    useEffect(() => { fetchStudents(); }, [fetchStudents]);
+
+    function handleLogout() {
+      localStorage.removeItem("jwt_token");
+      onLogout();
+    }
+
+    async function handleDelete(id) {
+      try {
+        await apiDelete(`/api/students/${id}`);
+        setDeleteStudent(null);
+        fetchStudents();
+      } catch (err) {
+        alert("Delete failed: " + err.message);
+      }
+    }
+
+    return (
+      <div className="app-shell">
+        <Navbar user={user} onLogout={handleLogout} />
+
+        <main className="main-content">
+
+          {/* Page header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
+            <div>
+              <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--navy)" }}>Dashboard</h1>
+              <p style={{ color: "var(--gray-600)", fontSize: "0.9rem" }}>Manage your students</p>
+            </div>
+            <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+              + Add Student
+            </button>
+          </div>
+
+          {/* Error banner */}
+          {error && (
+            <div className="alert alert-info">
+              {error}{" "}
+              <button style={{ background: "none", border: "none", textDecoration: "underline", cursor: "pointer", color: "inherit" }}
+                onClick={fetchStudents}>
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Stats — only shown when data is loaded */}
+          {!loading && !error && <StatsBar students={students} />}
+
+          {/* Students table */}
+          {loading ? (
+            <div className="card">
+              <div className="loading-row">
+                <span className="spinner spinner-dark"></span>
+                <p style={{ marginTop: "0.75rem" }}>Loading students...</p>
+              </div>
+            </div>
+          ) : (
+            <StudentsTable
+              students={students}
+              onEdit={s => setEditStudent(s)}
+              onDelete={s => setDeleteStudent(s)}
+            />
+          )}
+
+          {/* Info footer */}
+          <div className="alert alert-info" style={{ textAlign: "center", fontSize: "0.8rem" }}>
+            Connected to: <strong>{API_BASE_URL}</strong>
+          </div>
+        </main>
+
+        {/* Modals — rendered outside the table for clean z-index */}
+        {showAdd && (
+          <StudentModal
+            onSave={() => { setShowAdd(false); fetchStudents(); }}
+            onClose={() => setShowAdd(false)}
+          />
+        )}
+        {editStudent && (
+          <StudentModal
+            student={editStudent}
+            onSave={() => { setEditStudent(null); fetchStudents(); }}
+            onClose={() => setEditStudent(null)}
+          />
+        )}
+        {deleteStudent && (
+          <DeleteConfirmModal
+            student={deleteStudent}
+            onConfirm={handleDelete}
+            onClose={() => setDeleteStudent(null)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ============================================================
+  // COMPONENT: App (root)
+  // ============================================================
+  // Manages the top-level auth state.
+  // If we have a token in localStorage, start as logged in.
+  // This is the same pattern used in Lesson 35.
+
+  function App() {
+    // Check for existing token on load (Lesson 35 — JWT persistence)
+    const [user, setUser] = useState(() => {
+      const token = localStorage.getItem("jwt_token");
+      if (!token) return null;
+      // Decode the JWT payload (base64) to get user info
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        // Check if token is expired
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          localStorage.removeItem("jwt_token");
+          return null;
+        }
+        return { email: payload.email || payload.sub || "User" };
+      } catch {
+        return null;
+      }
+    });
+
+    if (!user) {
+      return <LoginPage onLogin={setUser} />;
+    }
+
+    return <Dashboard user={user} onLogout={() => setUser(null)} />;
+  }
+
+  // ============================================================
+  // MOUNT REACT APP
+  // ============================================================
+  // ReactDOM.createRoot is the modern React 18 way to mount
+  // a component tree into the DOM (replaces ReactDOM.render).
+
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(<App />);
+</script>
+</body>
+</html>

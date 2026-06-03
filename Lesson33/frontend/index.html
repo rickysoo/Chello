@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 33 - Full Stack: Student List</title>
+
+  <!--
+    ============================================================
+    React via CDN — no build tools needed
+    We load React, ReactDOM, and Babel (to use JSX in the browser)
+    ============================================================
+  -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: #1a365d;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #718096;
+      margin-bottom: 2rem;
+    }
+
+    /* ---- CORS explanation box ---- */
+    .info-box {
+      background: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .info-box h2 {
+      font-size: 1rem;
+      color: #2b6cb0;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-box p {
+      font-size: 0.9rem;
+      color: #2c5282;
+      line-height: 1.6;
+      margin-bottom: 0.4rem;
+    }
+
+    .info-box code {
+      background: #bee3f8;
+      padding: 0 4px;
+      border-radius: 3px;
+      font-size: 0.85rem;
+    }
+
+    /* ---- Architecture diagram ---- */
+    .arch {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .arch-box {
+      background: #edf2f7;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    .arch-box strong {
+      display: block;
+      font-size: 0.95rem;
+      color: #2d3748;
+    }
+
+    .arch-box span {
+      color: #718096;
+      font-size: 0.78rem;
+    }
+
+    .arch-arrow {
+      font-size: 1.2rem;
+      color: #a0aec0;
+    }
+
+    /* ---- Student table ---- */
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      color: #2d3748;
+      margin-bottom: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: #edf2f7;
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      border-bottom: 2px solid #e2e8f0;
+      color: #4a5568;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid #f7fafc;
+      color: #2d3748;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7fafc; }
+
+    .badge {
+      background: #c6f6d5;
+      color: #276749;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* ---- Status messages ---- */
+    .loading { color: #718096; font-style: italic; padding: 1rem 0; }
+    .error-msg { color: #c53030; background: #fff5f5; border: 1px solid #feb2b2; border-radius: 6px; padding: 1rem; }
+    .empty { color: #a0aec0; padding: 1rem 0; }
+
+    /* ---- Code block ---- */
+    .code-block {
+      background: #1a202c;
+      color: #a0aec0;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      overflow-x: auto;
+      margin: 0.5rem 0;
+    }
+
+    .code-block .comment { color: #68d391; }
+    .code-block .keyword { color: #63b3ed; }
+    .code-block .string  { color: #f6ad55; }
+  </style>
+</head>
+<body>
+
+  <div id="root"></div>
+
+  <!--
+    ============================================================
+    Our React app — written in JSX inside a Babel script tag
+    Babel compiles JSX to plain JavaScript in the browser
+    ============================================================
+  -->
+  <script type="text/babel">
+
+    // ============================================================
+    // The API URL our frontend will call
+    // This is the C# ASP.NET API we built in Program.cs
+    // ============================================================
+    const API_URL = "http://localhost:5000/api/students";
+
+    // ============================================================
+    // CorsExplainer component
+    // Teaches the learner about CORS before showing the data
+    // ============================================================
+    function CorsExplainer() {
+      return (
+        <div>
+          {/* Architecture diagram */}
+          <div className="arch">
+            <div className="arch-box">
+              <strong>React App</strong>
+              <span>localhost:3000 (you)</span>
+            </div>
+            <div className="arch-arrow">→ HTTP fetch →</div>
+            <div className="arch-box">
+              <strong>C# API</strong>
+              <span>localhost:5000</span>
+            </div>
+            <div className="arch-arrow">→ SQL query →</div>
+            <div className="arch-box">
+              <strong>SQL Server</strong>
+              <span>ChelloApp database</span>
+            </div>
+          </div>
+
+          {/* CORS explanation */}
+          <div className="info-box">
+            <h2>What is CORS — and why do we need it?</h2>
+            <p>
+              This React app runs on <code>localhost:3000</code>.
+              The C# API runs on <code>localhost:5000</code>.
+              Even though both are on your computer, the browser treats them as
+              <strong> different origins</strong> because the port numbers differ.
+            </p>
+            <p>
+              Browsers have a security rule called the <strong>Same-Origin Policy</strong>:
+              a webpage can only freely read data from the same origin it was loaded from.
+              This stops malicious websites from stealing your data from other sites.
+            </p>
+            <p>
+              <strong>CORS</strong> (Cross-Origin Resource Sharing) is how the API gives
+              the browser permission to proceed. In <code>Program.cs</code>, we added:
+            </p>
+            <div className="code-block">
+              <span className="comment">// Allow React on port 3000 to call this API</span>{"\n"}
+              <span className="keyword">builder</span>.Services.AddCors(options =&gt; {"{"}{"\n"}
+              {"    "}options.AddPolicy(<span className="string">"AllowReactApp"</span>, policy =&gt; {"{"}{"\n"}
+              {"        "}policy.WithOrigins(<span className="string">"http://localhost:3000"</span>){"\n"}
+              {"              "}.AllowAnyHeader(){"\n"}
+              {"              "}.AllowAnyMethod();{"\n"}
+              {"    "}{"}"});{"\n"}
+              {"}"});
+            </div>
+            <p>
+              Without this, the browser blocks the request and you see:
+              <br />
+              <code>Access to fetch has been blocked by CORS policy</code>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // StudentTable component
+    // Displays the list of students in a table
+    // ============================================================
+    function StudentTable({ students }) {
+      if (students.length === 0) {
+        return <p className="empty">No students found in the database.</p>;
+      }
+
+      return (
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Age</th>
+            </tr>
+          </thead>
+          <tbody>
+            {students.map(student => (
+              <tr key={student.id}>
+                <td><span className="badge">{student.id}</span></td>
+                <td>{student.name}</td>
+                <td>{student.email}</td>
+                <td>{student.age ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    // ============================================================
+    // Main App component
+    // Uses React hooks to fetch data from the API on load
+    // ============================================================
+    function App() {
+      // useState: holds the list of students
+      const [students, setStudents] = React.useState([]);
+
+      // useState: tracks whether we are currently loading
+      const [loading, setLoading] = React.useState(true);
+
+      // useState: holds any error message
+      const [error, setError] = React.useState(null);
+
+      // useEffect: runs once when the component first loads
+      // This is where we call the API
+      React.useEffect(() => {
+        fetchStudents();
+      }, []); // The empty [] means "run this once, when the component mounts"
+
+      async function fetchStudents() {
+        try {
+          setLoading(true);
+          setError(null);
+
+          // --------------------------------------------------------
+          // fetch() is JavaScript's built-in HTTP request function
+          // It calls our C# API and gets back JSON data
+          // --------------------------------------------------------
+          const response = await fetch(API_URL);
+
+          if (!response.ok) {
+            throw new Error(`API returned status ${response.status}`);
+          }
+
+          // Parse the JSON response body into a JavaScript array
+          const data = await response.json();
+          setStudents(data);
+
+        } catch (err) {
+          // If the API is not running, this catches the network error
+          setError(
+            err.message.includes("Failed to fetch")
+              ? "Could not connect to the API. Make sure the C# API is running: cd Lesson33/api && dotnet run"
+              : err.message
+          );
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      return (
+        <div>
+          <h1>Lesson 33: Full Stack Project Setup</h1>
+          <p className="subtitle">
+            React frontend → C# ASP.NET API → SQL Server database
+          </p>
+
+          <CorsExplainer />
+
+          <div className="card">
+            <h2>Students (from API: {API_URL})</h2>
+
+            {loading && <p className="loading">Fetching students from API...</p>}
+
+            {error && (
+              <div className="error-msg">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
+
+            {!loading && !error && <StudentTable students={students} />}
+          </div>
+
+          <div className="card">
+            <h2>How this fetch works</h2>
+            <div className="code-block">
+              <span className="comment">// Inside the React component:</span>{"\n\n"}
+              React.useEffect(<span className="keyword">() =&gt;</span> {"{"}{"\n"}
+              {"  "}<span className="comment">// This runs once when the page loads</span>{"\n"}
+              {"  "}fetchStudents();{"\n"}
+              {"}"}, []);{"\n\n"}
+              <span className="keyword">async function</span> fetchStudents() {"{"}{"\n"}
+              {"  "}<span className="comment">// Call the C# API</span>{"\n"}
+              {"  "}<span className="keyword">const</span> response = <span className="keyword">await</span> fetch(<span className="string">"{API_URL}"</span>);{"\n\n"}
+              {"  "}<span className="comment">// Convert the JSON response to a JavaScript array</span>{"\n"}
+              {"  "}<span className="keyword">const</span> data = <span className="keyword">await</span> response.json();{"\n\n"}
+              {"  "}<span className="comment">// Store it in React state — this re-renders the table</span>{"\n"}
+              {"  "}setStudents(data);{"\n"}
+              {"}"}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // Mount the React app into the <div id="root"> element
+    // ============================================================
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 27 – Props &amp; State</title>
+
+  <!-- Load React, ReactDOM, and Babel from CDN -->
+  <!-- React     = the core library (components, hooks, JSX logic)     -->
+  <!-- ReactDOM  = renders React components into the real browser DOM  -->
+  <!-- Babel     = transpiles JSX syntax so the browser can run it     -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* ─── Base reset & fonts ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    h1 { font-size: 2rem; font-weight: 700; color: #38bdf8; margin-bottom: .25rem; }
+    h2 { font-size: 1.1rem; font-weight: 600; color: #94a3b8; margin-bottom: 1.5rem; }
+    h3 { font-size: 1rem; font-weight: 600; color: #7dd3fc; margin-bottom: .75rem; }
+    .page { max-width: 860px; margin: 0 auto; }
+
+    /* ─── Section cards ──────────────────────────────────────────── */
+    .section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+    .badge {
+      display: inline-block;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: .2rem .6rem;
+      border-radius: 999px;
+      margin-bottom: .75rem;
+    }
+    .badge-props  { background: #1d4ed8; color: #bfdbfe; }
+    .badge-state  { background: #7c3aed; color: #ede9fe; }
+    .badge-list   { background: #065f46; color: #a7f3d0; }
+    .badge-cond   { background: #92400e; color: #fde68a; }
+    .badge-combo  { background: #831843; color: #fbcfe8; }
+
+    /* ─── Student card (Section 1 – Props) ──────────────────────── */
+    .student-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: inline-flex;
+      flex-direction: column;
+      gap: .35rem;
+      min-width: 180px;
+      margin: .4rem;
+    }
+    .student-card .sname { font-size: 1.05rem; font-weight: 700; color: #f1f5f9; }
+    .student-card .sscore { font-size: .9rem; color: #94a3b8; }
+    .grade-badge {
+      display: inline-block;
+      padding: .15rem .55rem;
+      border-radius: 6px;
+      font-size: .8rem;
+      font-weight: 700;
+      width: fit-content;
+    }
+    .grade-A { background: #166534; color: #bbf7d0; }
+    .grade-B { background: #1e40af; color: #bfdbfe; }
+    .grade-C { background: #854d0e; color: #fef9c3; }
+    .grade-D { background: #7f1d1d; color: #fecaca; }
+    .cards-row { display: flex; flex-wrap: wrap; }
+
+    /* ─── Counter (Section 2 – useState) ────────────────────────── */
+    .counter-box {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .count-display {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #a78bfa;
+      min-width: 3rem;
+      text-align: center;
+    }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: .45rem 1.1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    button:hover { opacity: .85; }
+    .btn-inc { background: #7c3aed; color: #fff; }
+    .btn-dec { background: #334155; color: #e2e8f0; }
+    .btn-rst { background: #1e293b; color: #94a3b8; border: 1px solid #475569; font-size: .85rem; padding: .35rem .8rem; }
+
+    /* ─── Controlled input (Section 3 – useState + form) ────────── */
+    .input-row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+    .live-input {
+      background: #0f172a;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: .5rem .85rem;
+      color: #f1f5f9;
+      font-size: 1rem;
+      width: 260px;
+      outline: none;
+    }
+    .live-input:focus { border-color: #7c3aed; }
+    .preview-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: .5rem 1rem;
+      color: #a78bfa;
+      font-size: 1.05rem;
+      min-width: 180px;
+      font-style: italic;
+    }
+    .char-count { font-size: .8rem; color: #64748b; margin-top: .4rem; }
+
+    /* ─── Conditional render (Section 4) ────────────────────────── */
+    .btn-toggle { background: #0369a1; color: #fff; }
+    .detail-panel {
+      margin-top: 1rem;
+      background: #0f172a;
+      border: 1px solid #0369a1;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+    .detail-row { display: flex; gap: .5rem; margin: .3rem 0; font-size: .9rem; }
+    .detail-label { color: #7dd3fc; width: 90px; flex-shrink: 0; }
+    .detail-value { color: #e2e8f0; }
+
+    /* ─── List render (Section 5) ────────────────────────────────── */
+    .student-list { list-style: none; display: flex; flex-direction: column; gap: .5rem; }
+    .student-list li {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: .6rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .9rem;
+    }
+    .student-list li .srank { color: #64748b; margin-right: .6rem; }
+
+    /* ─── ScoreBoard combo (Section 6) ──────────────────────────── */
+    .scoreboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: .75rem;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .btn-highlight { background: #be185d; color: #fff; }
+    .btn-highlight.active { background: #f472b6; color: #1e293b; }
+    .sb-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .55rem 1rem;
+      border-radius: 8px;
+      margin-bottom: .4rem;
+      transition: background .2s;
+    }
+    .sb-row.normal { background: #0f172a; border: 1px solid #334155; }
+    .sb-row.top    { background: #422006; border: 1px solid #f59e0b; }
+    .sb-name  { flex: 1; font-weight: 600; }
+    .sb-score { color: #94a3b8; font-size: .9rem; }
+    .sb-grade { font-size: .8rem; font-weight: 700; padding: .15rem .5rem; border-radius: 5px; }
+    .crown { font-size: 1rem; }
+    .note  { font-size: .78rem; color: #64748b; margin-top: .6rem; font-style: italic; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║              LESSON 27 — PROPS vs STATE                        ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║                                                                  ║
+  ║  PROPS (short for "properties")                                  ║
+  ║  ─────────────────────────────                                   ║
+  ║  • Data passed FROM a parent component INTO a child component.   ║
+  ║  • Like function arguments — you pass them in, the child reads   ║
+  ║    them, but CANNOT change them.                                 ║
+  ║  • Props flow ONE WAY: parent → child (never the other way).     ║
+  ║  • Think of props as the "input" to a component.                 ║
+  ║                                                                  ║
+  ║  Example:                                                        ║
+  ║    <StudentCard name="Alice" score={92} grade="A" />             ║
+  ║    The StudentCard component receives name, score, grade         ║
+  ║    as props — it just displays them.                             ║
+  ║                                                                  ║
+  ║  STATE                                                           ║
+  ║  ─────                                                           ║
+  ║  • Data that LIVES INSIDE a component and can CHANGE over time.  ║
+  ║  • When state changes, React automatically re-renders the        ║
+  ║    component so the screen updates.                              ║
+  ║  • Created with the useState() hook:                             ║
+  ║      const [count, setCount] = React.useState(0);               ║
+  ║        └─ current value      └─ function to update it           ║
+  ║  • Think of state as the component's "memory".                   ║
+  ║                                                                  ║
+  ║  RULE OF THUMB                                                   ║
+  ║  ─────────────                                                   ║
+  ║  • If data comes from outside  → it's a PROP                     ║
+  ║  • If data changes inside      → it's STATE                      ║
+  ║                                                                  ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+
+<script type="text/babel">
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION 1 — PROPS
+// Passing data into a child component.
+// The parent decides the values; the child just displays them.
+// ─────────────────────────────────────────────────────────────────
+
+// Helper: turn a letter grade into a CSS class name
+function gradeClass(grade) {
+  return 'grade-badge grade-' + grade[0];
+}
+
+// StudentCard receives props: name, score, grade
+// It CANNOT change these — it only reads and displays them.
+function StudentCard({ name, score, grade }) {
+  return (
+    <div className="student-card">
+      <span className="sname">{name}</span>
+      <span className="sscore">Score: {score} / 100</span>
+      <span className={gradeClass(grade)}>{grade}</span>
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION 2 — useState: Counter
+// State lives INSIDE the component. When it changes, React
+// re-renders so the screen shows the new value automatically.
+// ─────────────────────────────────────────────────────────────────
+function Counter() {
+  // useState(0) sets the initial value to 0.
+  // count     = the current value React is remembering
+  // setCount  = the function we call to update that value
+  const [count, setCount] = React.useState(0);
+
+  return (
+    <div>
+      <div className="counter-box">
+        {/* Clicking calls setCount, which triggers a re-render */}
+        <button className="btn-dec" onClick={() => setCount(count - 1)}>− Decrement</button>
+        <span className="count-display">{count}</span>
+        <button className="btn-inc" onClick={() => setCount(count + 1)}>+ Increment</button>
+      </div>
+      <br />
+      <button className="btn-rst" onClick={() => setCount(0)}>Reset to 0</button>
+      <p style={{ marginTop: '1rem', fontSize: '.85rem', color: '#64748b' }}>
+        Each click calls <code style={{color:'#a78bfa'}}>setCount()</code>, React updates{' '}
+        <code style={{color:'#a78bfa'}}>count</code>, and re-renders just this component.
+      </p>
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION 3 — useState with a controlled input
+// A "controlled input" means React state is the single source of
+// truth for whatever the user types. The input's value is always
+// equal to the state variable — so they stay in sync.
+// ─────────────────────────────────────────────────────────────────
+function NamePreview() {
+  // text = what the user has typed (starts empty)
+  const [text, setText] = React.useState('');
+
+  // Every keystroke fires onChange → setText → re-render → input shows new value
+  function handleChange(event) {
+    setText(event.target.value);
+  }
+
+  return (
+    <div>
+      <div className="input-row">
+        <input
+          className="live-input"
+          type="text"
+          placeholder="Type your name here…"
+          value={text}          // controlled: React owns the value
+          onChange={handleChange}
+        />
+        {/* Live preview — updates on every keystroke */}
+        <div className="preview-box">
+          {text ? `Hello, ${text}! 👋` : <span style={{color:'#475569'}}>Preview appears here</span>}
+        </div>
+      </div>
+      <p className="char-count">{text.length} character{text.length !== 1 ? 's' : ''} typed</p>
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION 4 — Conditional Rendering
+// Use a boolean piece of state to show or hide part of the UI.
+// React simply does not render anything when the condition is false.
+// ─────────────────────────────────────────────────────────────────
+function StudentDetails() {
+  // isVisible controls whether the detail panel is shown
+  const [isVisible, setIsVisible] = React.useState(false);
+
+  // The student data — in a real app this might come in as props
+  const student = {
+    name: 'Jordan Lee',
+    score: 87,
+    grade: 'B+',
+    subject: 'Computer Science',
+    teacher: 'Ms. Rivera',
+    attendance: '94%',
+  };
+
+  return (
+    <div>
+      <button
+        className="btn-toggle"
+        onClick={() => setIsVisible(!isVisible)}   // flip true↔false
+      >
+        {isVisible ? '▲ Hide Details' : '▼ Show Student Details'}
+      </button>
+
+      {/* Conditional render: only show the panel when isVisible is true */}
+      {isVisible && (
+        <div className="detail-panel">
+          <div className="detail-row"><span className="detail-label">Name</span>       <span className="detail-value">{student.name}</span></div>
+          <div className="detail-row"><span className="detail-label">Score</span>      <span className="detail-value">{student.score} / 100</span></div>
+          <div className="detail-row"><span className="detail-label">Grade</span>      <span className="detail-value">{student.grade}</span></div>
+          <div className="detail-row"><span className="detail-label">Subject</span>    <span className="detail-value">{student.subject}</span></div>
+          <div className="detail-row"><span className="detail-label">Teacher</span>    <span className="detail-value">{student.teacher}</span></div>
+          <div className="detail-row"><span className="detail-label">Attendance</span> <span className="detail-value">{student.attendance}</span></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION 5 — List rendering with .map() and the key prop
+// .map() turns an array of data into an array of JSX elements.
+// Each item MUST have a unique "key" prop so React can track which
+// item is which when the list updates (add, remove, reorder).
+// ─────────────────────────────────────────────────────────────────
+
+// The raw data — just a plain JavaScript array
+const classRoster = [
+  { id: 1, name: 'Alice Chen',    score: 95, grade: 'A' },
+  { id: 2, name: 'Bob Martins',   score: 82, grade: 'B' },
+  { id: 3, name: 'Carlos Diaz',   score: 77, grade: 'C' },
+  { id: 4, name: 'Diana Park',    score: 91, grade: 'A' },
+  { id: 5, name: 'Ethan Brooks',  score: 68, grade: 'D' },
+];
+
+function RosterList() {
+  return (
+    <ul className="student-list">
+      {/* .map() iterates every student and returns a <li> for each */}
+      {classRoster.map((student, index) => (
+        // key={student.id} — unique & stable (prefer id over array index)
+        <li key={student.id}>
+          <span>
+            <span className="srank">#{index + 1}</span>
+            {student.name}
+          </span>
+          <span>
+            <span style={{ marginRight: '.5rem', color: '#e2e8f0' }}>{student.score}</span>
+            <span className={gradeClass(student.grade)}>{student.grade}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// SECTION 6 — ScoreBoard: Props + State + List + Conditional together
+//
+// Props:  the students array is passed in from the parent (App)
+// State:  highlightTop (bool) — does the user want top student highlighted?
+// List:   .map() renders each student row
+// Cond:   top-scoring row gets a special style when highlight is on
+// ─────────────────────────────────────────────────────────────────
+
+// A single row in the scoreboard — receives its data as props
+function ScoreBoardRow({ student, isTopStudent, highlight }) {
+  // Only apply the "top" style if both conditions are true
+  const rowClass = 'sb-row ' + (highlight && isTopStudent ? 'top' : 'normal');
+
+  return (
+    <div className={rowClass}>
+      {/* Crown emoji only appears for top student when highlight is on */}
+      {highlight && isTopStudent && <span className="crown">👑</span>}
+      <span className="sb-name">{student.name}</span>
+      <span className="sb-score">{student.score} pts</span>
+      <span className={gradeClass(student.grade) + ' sb-grade'}>{student.grade}</span>
+    </div>
+  );
+}
+
+// ScoreBoard receives the students list as a PROP from App
+function ScoreBoard({ students }) {
+  // State: whether the highlight toggle is ON or OFF
+  const [highlight, setHighlight] = React.useState(false);
+
+  // Find the highest score so we know which row to highlight
+  const topScore = Math.max(...students.map(s => s.score));
+
+  return (
+    <div>
+      <div className="scoreboard-header">
+        <h3 style={{ margin: 0 }}>Class ScoreBoard</h3>
+        <button
+          className={'btn-highlight' + (highlight ? ' active' : '')}
+          onClick={() => setHighlight(!highlight)}
+        >
+          {highlight ? '★ Highlighting Top Student' : '☆ Highlight Top Student'}
+        </button>
+      </div>
+
+      {/* Render one row per student using .map() */}
+      {students.map(student => (
+        <ScoreBoardRow
+          key={student.id}
+          student={student}                          {/* prop: the student object    */}
+          isTopStudent={student.score === topScore}  {/* prop: is this the top one? */}
+          highlight={highlight}                      {/* prop: is highlight on?      */}
+        />
+      ))}
+
+      <p className="note">
+        Props pass data down: App → ScoreBoard → ScoreBoardRow.
+        State (<code>highlight</code>) lives in ScoreBoard and toggles on button click.
+      </p>
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────
+// APP — the root component that wires everything together
+// ─────────────────────────────────────────────────────────────────
+function App() {
+  return (
+    <div className="page">
+      <h1>Lesson 27 — Props &amp; State</h1>
+      <h2>React fundamentals: passing data in vs. remembering data inside</h2>
+
+      {/* ── Section 1: Props ── */}
+      <div className="section">
+        <span className="badge badge-props">Props</span>
+        <h3>1 — StudentCard component (Props)</h3>
+        <p style={{ fontSize: '.88rem', color: '#94a3b8', marginBottom: '1rem' }}>
+          The parent (App) passes <code style={{color:'#93c5fd'}}>name</code>,{' '}
+          <code style={{color:'#93c5fd'}}>score</code>, and{' '}
+          <code style={{color:'#93c5fd'}}>grade</code> into each card.{' '}
+          StudentCard just reads and displays them — it cannot change them.
+        </p>
+        {/* Each card gets different props — same component, different data */}
+        <div className="cards-row">
+          <StudentCard name="Alice Chen"   score={95} grade="A" />
+          <StudentCard name="Bob Martins"  score={82} grade="B" />
+          <StudentCard name="Carlos Diaz"  score={77} grade="C" />
+          <StudentCard name="Diana Park"   score={68} grade="D" />
+        </div>
+      </div>
+
+      {/* ── Section 2: useState counter ── */}
+      <div className="section">
+        <span className="badge badge-state">State</span>
+        <h3>2 — Counter (useState)</h3>
+        <p style={{ fontSize: '.88rem', color: '#94a3b8', marginBottom: '1rem' }}>
+          <code style={{color:'#c4b5fd'}}>useState(0)</code> gives the component its own memory.
+          Click the buttons — React re-renders automatically when the count changes.
+        </p>
+        <Counter />
+      </div>
+
+      {/* ── Section 3: controlled input ── */}
+      <div className="section">
+        <span className="badge badge-state">State + Form</span>
+        <h3>3 — Controlled Input (useState + onChange)</h3>
+        <p style={{ fontSize: '.88rem', color: '#94a3b8', marginBottom: '1rem' }}>
+          Every keystroke updates the <code style={{color:'#c4b5fd'}}>text</code> state variable.
+          The preview re-renders instantly because React owns the input's value.
+        </p>
+        <NamePreview />
+      </div>
+
+      {/* ── Section 4: conditional rendering ── */}
+      <div className="section">
+        <span className="badge badge-cond">Conditional Render</span>
+        <h3>4 — Show / Hide a Panel (boolean state)</h3>
+        <p style={{ fontSize: '.88rem', color: '#94a3b8', marginBottom: '1rem' }}>
+          A boolean state variable (<code style={{color:'#fcd34d'}}>isVisible</code>) controls
+          whether the panel exists in the DOM at all. When false, React renders nothing.
+        </p>
+        <StudentDetails />
+      </div>
+
+      {/* ── Section 5: list rendering ── */}
+      <div className="section">
+        <span className="badge badge-list">List Render</span>
+        <h3>5 — Class Roster (.map() + key prop)</h3>
+        <p style={{ fontSize: '.88rem', color: '#94a3b8', marginBottom: '1rem' }}>
+          <code style={{color:'#6ee7b7'}}>.map()</code> transforms the{' '}
+          <code style={{color:'#6ee7b7'}}>classRoster</code> array into a list of{' '}
+          <code style={{color:'#6ee7b7'}}>&lt;li&gt;</code> elements.
+          The <code style={{color:'#6ee7b7'}}>key</code> prop lets React track each item uniquely.
+        </p>
+        <RosterList />
+      </div>
+
+      {/* ── Section 6: ScoreBoard combo ── */}
+      <div className="section">
+        <span className="badge badge-combo">Props + State + List + Conditional</span>
+        <h3>6 — ScoreBoard (everything combined)</h3>
+        <p style={{ fontSize: '.88rem', color: '#94a3b8', marginBottom: '1rem' }}>
+          App passes the <code style={{color:'#f9a8d4'}}>students</code> array as a prop.
+          ScoreBoard holds toggle state. Each row is rendered with .map() and styled conditionally.
+        </p>
+        {/* classRoster is passed as a prop — ScoreBoard doesn't own this data */}
+        <ScoreBoard students={classRoster} />
+      </div>
+    </div>
+  );
+}
+
+// Mount the App into the #root div
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+</script>
+</body>
+</html>

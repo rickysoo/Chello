@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 29 - Fetch from API: Connecting React to your C# API</title>
+
+  <!-- ============================================================
+       LESSON 29: FETCH FROM API — CONNECTING REACT TO YOUR C# API
+       ============================================================
+
+       WHAT YOU WILL LEARN:
+       - How React talks to a backend API using the fetch() function
+       - useEffect: runs code AFTER the component renders (e.g., load data)
+       - async/await: a clean way to wait for API responses
+       - How to show loading spinners and error messages
+       - How to POST (add) and DELETE data through an API
+
+       ============================================================
+       HOW FETCH WORKS IN REACT
+       ============================================================
+
+       In React, you use the built-in fetch() function to call APIs.
+       fetch() returns a Promise — meaning it does the work in the
+       background and tells you when it is done.
+
+       Basic pattern:
+         fetch("http://localhost:5000/api/students")
+           .then(response => response.json())
+           .then(data => console.log(data))
+
+       With async/await (cleaner style):
+         const response = await fetch("http://localhost:5000/api/students");
+         const data = await response.json();
+
+       ============================================================
+       WHAT IS useEffect?
+       ============================================================
+
+       useEffect lets you run code AFTER the component has rendered.
+       It is perfect for loading data from an API.
+
+       useEffect(() => {
+         // this code runs after render
+         loadStudents();
+       }, []); // <-- the [] is the "dependency array"
+
+       THE DEPENDENCY ARRAY:
+         []         — run once when the component first loads
+         [name]     — run again whenever "name" changes
+         (no array) — run after EVERY render (rarely what you want)
+
+       ============================================================
+       THIS LESSON CONNECTS TO LESSON 19 (C# API)
+       ============================================================
+
+       Make sure your C# API from Lesson 19 is running:
+         cd Lesson19
+         dotnet run
+
+       The API should be available at: http://localhost:5000
+       Endpoints used:
+         GET    /api/students         — get all students
+         POST   /api/students         — add a new student
+         DELETE /api/students/{id}    — delete a student by id
+
+       ============================================================ -->
+
+  <!-- Load React 18 from CDN (no install needed!) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel lets us write JSX directly in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* ---- Reset & base ---- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f4f8;
+      color: #222;
+      min-height: 100vh;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: #1a237e;
+      color: white;
+      padding: 24px 32px;
+    }
+    .header h1 { font-size: 1.8rem; margin-bottom: 4px; }
+    .header p  { font-size: 0.95rem; opacity: 0.8; }
+
+    /* ---- Main layout ---- */
+    .container {
+      max-width: 900px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+
+    /* ---- Info box ---- */
+    .info-box {
+      background: #e8eaf6;
+      border-left: 4px solid #3949ab;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .info-box code {
+      background: #c5cae9;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+
+    /* ---- Section card ---- */
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .card h2 {
+      font-size: 1.15rem;
+      color: #1a237e;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ---- Form ---- */
+    .form-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .form-row input {
+      flex: 1;
+      min-width: 140px;
+      padding: 9px 12px;
+      border: 1px solid #c5cae9;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-row input:focus { border-color: #3949ab; }
+
+    /* ---- Buttons ---- */
+    .btn {
+      padding: 9px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.93rem;
+      font-weight: 600;
+      transition: background 0.18s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary  { background: #3949ab; color: white; }
+    .btn-primary:hover  { background: #283593; }
+    .btn-success  { background: #2e7d32; color: white; }
+    .btn-success:hover  { background: #1b5e20; }
+    .btn-danger   { background: #c62828; color: white; font-size: 0.82rem; padding: 6px 12px; }
+    .btn-danger:hover   { background: #b71c1c; }
+    .btn-refresh  { background: #00695c; color: white; }
+    .btn-refresh:hover  { background: #004d40; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ---- Status messages ---- */
+    .status-error {
+      background: #ffebee;
+      border: 1px solid #ef9a9a;
+      color: #b71c1c;
+      padding: 14px 16px;
+      border-radius: 7px;
+      margin-bottom: 16px;
+      font-size: 0.93rem;
+    }
+    .status-success {
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      color: #2e7d32;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+
+    /* ---- Spinner ---- */
+    .spinner-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px;
+      gap: 14px;
+      color: #666;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #e8eaf6;
+      border-top-color: #3949ab;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Student cards ---- */
+    .students-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+    }
+    .student-card {
+      background: #f5f7ff;
+      border: 1px solid #c5cae9;
+      border-radius: 8px;
+      padding: 16px;
+      position: relative;
+    }
+    .student-card .student-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1a237e;
+      margin-bottom: 4px;
+    }
+    .student-card .student-email {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .student-card .student-grade {
+      font-size: 0.82rem;
+      color: #777;
+      margin-bottom: 12px;
+    }
+    .student-card .student-id {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-bottom: 10px;
+    }
+    .student-card .delete-btn-wrap {
+      text-align: right;
+    }
+
+    /* ---- Empty state ---- */
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: #888;
+      font-size: 0.95rem;
+    }
+
+    /* ---- Top bar ---- */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .student-count {
+      font-size: 0.88rem;
+      color: #555;
+    }
+
+    /* ---- Code hint box ---- */
+    .code-hint {
+      background: #263238;
+      color: #cfd8dc;
+      border-radius: 7px;
+      padding: 16px 20px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      margin-top: 12px;
+      overflow-x: auto;
+    }
+    .code-hint .comment { color: #78909c; }
+    .code-hint .keyword { color: #80cbc4; }
+    .code-hint .string  { color: #a5d6a7; }
+  </style>
+</head>
+<body>
+
+  <!-- React mounts here -->
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // ============================================================
+    // LESSON 29 — STUDENT MANAGER APP
+    // Demonstrates: useEffect, fetch, async/await, loading states
+    // ============================================================
+
+    const { useState, useEffect } = React;
+
+    // The base URL of our C# API from Lesson 19
+    // Make sure "dotnet run" is running in the Lesson19 folder!
+    const API_BASE = "http://localhost:5000/api/students";
+
+    // ============================================================
+    // COMPONENT: LoadingSpinner
+    // A simple animated spinner shown while waiting for the API
+    // ============================================================
+    function LoadingSpinner() {
+      return (
+        <div className="spinner-wrap">
+          <div className="spinner"></div>
+          <p>Loading students from API…</p>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // COMPONENT: StudentCard
+    // Displays one student and a delete button
+    // Props: student (object), onDelete (function)
+    // ============================================================
+    function StudentCard({ student, onDelete, deleting }) {
+      return (
+        <div className="student-card">
+          <div className="student-id">ID: {student.id}</div>
+          <div className="student-name">{student.name}</div>
+          <div className="student-email">📧 {student.email}</div>
+          {student.grade && (
+            <div className="student-grade">Grade: {student.grade}</div>
+          )}
+          <div className="delete-btn-wrap">
+            {/* When clicked, call the onDelete function passed from parent */}
+            <button
+              className="btn btn-danger"
+              onClick={() => onDelete(student.id)}
+              disabled={deleting === student.id}
+            >
+              {deleting === student.id ? "Deleting…" : "Delete"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // COMPONENT: AddStudentForm
+    // A form to POST a new student to the API
+    // Props: onStudentAdded (function called after successful add)
+    // ============================================================
+    function AddStudentForm({ onStudentAdded }) {
+      // useState for each form field
+      const [name,  setName]  = useState("");
+      const [email, setEmail] = useState("");
+      const [grade, setGrade] = useState("");
+
+      // Track whether we are currently submitting
+      const [submitting, setSubmitting] = useState(false);
+      const [message,    setMessage]    = useState("");
+      const [isError,    setIsError]    = useState(false);
+
+      // -------------------------------------------------------
+      // handleSubmit: called when the form is submitted
+      // Uses async/await to POST to the API
+      // -------------------------------------------------------
+      async function handleSubmit(e) {
+        // Prevent the default browser form submit (page reload)
+        e.preventDefault();
+
+        if (!name.trim() || !email.trim()) {
+          setIsError(true);
+          setMessage("Name and email are required.");
+          return;
+        }
+
+        setSubmitting(true);
+        setMessage("");
+
+        try {
+          // POST request: we send JSON data to the API
+          // The API reads it and saves a new student
+          const response = await fetch(API_BASE, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"  // tell the API we are sending JSON
+            },
+            body: JSON.stringify({ name, email, grade })
+            //     ^^ convert our JS object to a JSON string
+          });
+
+          if (!response.ok) {
+            // The API returned an error (e.g. 400 Bad Request)
+            throw new Error(`API error: ${response.status}`);
+          }
+
+          // The API returns the newly created student
+          const newStudent = await response.json();
+
+          setIsError(false);
+          setMessage(`Added "${newStudent.name}" successfully!`);
+
+          // Clear the form
+          setName("");
+          setEmail("");
+          setGrade("");
+
+          // Tell the parent component a student was added
+          // so it can refresh the list
+          onStudentAdded();
+
+        } catch (err) {
+          setIsError(true);
+          setMessage(`Failed to add student: ${err.message}`);
+        } finally {
+          // finally always runs — whether success or error
+          setSubmitting(false);
+        }
+      }
+
+      return (
+        <div className="card">
+          <h2>➕ Add New Student</h2>
+
+          {/* The form — onSubmit calls our handleSubmit function */}
+          <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <input
+                type="text"
+                placeholder="Full name *"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                disabled={submitting}
+              />
+              <input
+                type="email"
+                placeholder="Email address *"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                disabled={submitting}
+              />
+              <input
+                type="text"
+                placeholder="Grade (optional)"
+                value={grade}
+                onChange={e => setGrade(e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-success"
+              disabled={submitting}
+            >
+              {submitting ? "Adding…" : "Add Student"}
+            </button>
+          </form>
+
+          {/* Show success or error message */}
+          {message && (
+            <div className={isError ? "status-error" : "status-success"}>
+              {message}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ============================================================
+    // COMPONENT: StudentList
+    // Loads and displays all students from the API
+    // ============================================================
+    function StudentList({ refreshTrigger }) {
+      // students: the array of student objects from the API
+      const [students,  setStudents]  = useState([]);
+
+      // loading: true while waiting for the API response
+      const [loading,   setLoading]   = useState(true);
+
+      // error: stores an error message if the API call fails
+      const [error,     setError]     = useState(null);
+
+      // deleting: the id of the student currently being deleted
+      const [deleting,  setDeleting]  = useState(null);
+
+      // -------------------------------------------------------
+      // loadStudents: fetches GET /api/students from the C# API
+      // This is an async function because fetch() takes time
+      // -------------------------------------------------------
+      async function loadStudents() {
+        // Reset error and show spinner
+        setLoading(true);
+        setError(null);
+
+        try {
+          // fetch() sends a GET request to the URL
+          // await pauses here until the server responds
+          const response = await fetch(API_BASE);
+
+          // response.ok is true for status codes 200–299
+          if (!response.ok) {
+            throw new Error(`Server returned status ${response.status}`);
+          }
+
+          // response.json() reads the response body and parses JSON
+          // await pauses until parsing is complete
+          const data = await response.json();
+
+          // Update state — React re-renders the component
+          setStudents(data);
+
+        } catch (err) {
+          // If fetch fails (e.g., API is not running), we land here
+          setError(
+            "Could not connect to the API at " + API_BASE + ". " +
+            "Make sure your Lesson 19 C# API is running (dotnet run). " +
+            "Error: " + err.message
+          );
+        } finally {
+          // Whether success or error, stop showing the spinner
+          setLoading(false);
+        }
+      }
+
+      // -------------------------------------------------------
+      // useEffect — runs loadStudents() after the component renders
+      //
+      // The dependency array [refreshTrigger] means:
+      //   "Run this effect again whenever refreshTrigger changes"
+      //
+      // The parent component increments refreshTrigger when a
+      // new student is added, so the list automatically reloads.
+      // -------------------------------------------------------
+      useEffect(() => {
+        loadStudents();
+      }, [refreshTrigger]);
+      //  ^^ dependency array — re-run when refreshTrigger changes
+
+      // -------------------------------------------------------
+      // handleDelete: sends DELETE /api/students/{id}
+      // -------------------------------------------------------
+      async function handleDelete(id) {
+        // Show loading state on this specific card
+        setDeleting(id);
+
+        try {
+          const response = await fetch(`${API_BASE}/${id}`, {
+            method: "DELETE"
+          });
+
+          if (!response.ok) {
+            throw new Error(`Delete failed: ${response.status}`);
+          }
+
+          // Remove the deleted student from local state
+          // (faster than reloading the whole list)
+          setStudents(prev => prev.filter(s => s.id !== id));
+
+        } catch (err) {
+          alert("Could not delete student: " + err.message);
+        } finally {
+          setDeleting(null);
+        }
+      }
+
+      // ---- Render: show spinner, error, or student list ----
+
+      if (loading) {
+        return <LoadingSpinner />;
+      }
+
+      if (error) {
+        return (
+          <div className="status-error">
+            <strong>API Error:</strong> {error}
+          </div>
+        );
+      }
+
+      return (
+        <div>
+          {students.length === 0 ? (
+            <div className="empty-state">
+              No students found. Add one using the form above!
+            </div>
+          ) : (
+            <div className="students-grid">
+              {/* Map over the students array and render a card for each */}
+              {students.map(student => (
+                <StudentCard
+                  key={student.id}
+                  student={student}
+                  onDelete={handleDelete}
+                  deleting={deleting}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ============================================================
+    // COMPONENT: App (root component)
+    // Coordinates AddStudentForm and StudentList
+    // ============================================================
+    function App() {
+      // refreshTrigger: incrementing this number tells StudentList to reload
+      const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+      function handleStudentAdded() {
+        // Increment the trigger — StudentList's useEffect will fire again
+        setRefreshTrigger(prev => prev + 1);
+      }
+
+      function handleRefresh() {
+        setRefreshTrigger(prev => prev + 1);
+      }
+
+      return (
+        <div>
+          {/* ---- Header ---- */}
+          <div className="header">
+            <h1>Lesson 29 — Fetch from API</h1>
+            <p>Connecting React to your C# API from Lesson 19</p>
+          </div>
+
+          <div className="container">
+
+            {/* ---- Info box ---- */}
+            <div className="info-box">
+              <strong>How this works:</strong> This React app calls your C# API at{" "}
+              <code>http://localhost:5000/api/students</code>.
+              Make sure your Lesson 19 API is running: open a terminal, go to the{" "}
+              <code>Lesson19</code> folder, and run <code>dotnet run</code>.
+              Then reload this page.
+            </div>
+
+            {/* ---- Add Student Form ---- */}
+            <AddStudentForm onStudentAdded={handleStudentAdded} />
+
+            {/* ---- Student List ---- */}
+            <div className="card">
+              <div className="top-bar">
+                <h2>👥 Students from API</h2>
+                <button className="btn btn-refresh" onClick={handleRefresh}>
+                  ↻ Refresh List
+                </button>
+              </div>
+
+              {/* Pass refreshTrigger so the list reloads when it changes */}
+              <StudentList refreshTrigger={refreshTrigger} />
+            </div>
+
+            {/* ---- Key concepts recap ---- */}
+            <div className="card">
+              <h2>📖 Key Concepts in this Lesson</h2>
+
+              <p style={{marginBottom: 12, lineHeight: 1.6}}>
+                Here is a quick reference of the patterns used above.
+                Read through these and find them in the code!
+              </p>
+
+              <div className="code-hint">
+                <span className="comment">// 1. useEffect — run code after render</span>{"\n"}
+                useEffect(<span className="keyword">() =&gt;</span> {"{"}{"\n"}
+                {"  "}loadStudents(); <span className="comment">// called after component renders</span>{"\n"}
+                {"}"}, []); <span className="comment">// [] = run once on first load</span>{"\n\n"}
+
+                <span className="comment">// 2. fetch with async/await</span>{"\n"}
+                <span className="keyword">async function</span> loadStudents() {"{"}{"\n"}
+                {"  "}<span className="keyword">const</span> response = <span className="keyword">await</span> fetch(<span className="string">"http://localhost:5000/api/students"</span>);{"\n"}
+                {"  "}<span className="keyword">const</span> data = <span className="keyword">await</span> response.json();{"\n"}
+                {"  "}setStudents(data);{"\n"}
+                {"}"}{"\n\n"}
+
+                <span className="comment">// 3. POST to create a student</span>{"\n"}
+                <span className="keyword">await</span> fetch(API_BASE, {"{"}{"\n"}
+                {"  "}method: <span className="string">"POST"</span>,{"\n"}
+                {"  "}headers: {"{"} <span className="string">"Content-Type"</span>: <span className="string">"application/json"</span> {"}"},{ "\n"}
+                {"  "}body: JSON.stringify({"{"} name, email, grade {"}"}){"\n"}
+                {"}"});{"\n\n"}
+
+                <span className="comment">// 4. DELETE a student by id</span>{"\n"}
+                <span className="keyword">await</span> fetch(<span className="string">`${"{"}{API_BASE{"}"}/{"${"}{id{"}"}`}</span>, {"{"} method: <span className="string">"DELETE"</span> {"}"});
+              </div>
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    // ============================================================
+    // Mount the App component into the <div id="root"> element
+    // This is the entry point — same as every React app
+    // ============================================================
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+
+</body>
+</html>

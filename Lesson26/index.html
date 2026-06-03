@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 26: React Basics — Components</title>
+
+  <!-- ============================================================
+    WHAT IS REACT?
+    React is a JavaScript library made by Facebook for building
+    user interfaces. Instead of writing one giant HTML file, React
+    lets you break your UI into small, reusable pieces called
+    COMPONENTS.
+
+    WHY COMPONENTS?
+    Think of components like LEGO bricks. Each brick does one job.
+    You snap bricks together to build something bigger. For example:
+      - A Header component shows the page title
+      - A StudentCard component shows one student's info
+      - A StudentList component shows many StudentCards
+      - An App component holds everything together
+
+    KEY CONCEPTS IN THIS LESSON:
+    1. Functional Component  — a JavaScript function that returns JSX
+    2. Props                 — data you pass INTO a component (like arguments)
+    3. JSX                   — HTML-like syntax you write inside JavaScript
+    4. Composing             — nesting components inside other components
+
+    JSX RULES TO REMEMBER:
+    - Use className instead of class  (class is a reserved word in JS)
+    - Every tag must be closed: <br /> not <br>
+    - Return ONE root element (wrap siblings in a <div> or <>...</>)
+    - JavaScript expressions go inside curly braces: {variable}
+
+    HOW WE LOAD REACT HERE (CDN approach — no build step needed):
+    - React       : the core library (components, state, etc.)
+    - ReactDOM    : connects React to the real browser DOM
+    - Babel       : converts JSX → plain JavaScript the browser understands
+    We use <script type="text/babel"> so Babel processes our JSX.
+  ============================================================ -->
+
+  <!-- Load React from CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <!-- Load ReactDOM from CDN -->
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- Load Babel so the browser can understand JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+
+  <!-- This is the ONE real HTML element React will attach to.
+       React takes over everything inside this div. -->
+  <div id="root"></div>
+
+  <!-- type="text/babel" tells Babel to process this script block.
+       Without this, the browser would not understand JSX syntax. -->
+  <script type="text/babel">
+
+    // ============================================================
+    // COMPONENT 1: Header
+    // A simple functional component that takes no props.
+    // It just returns some JSX describing the page header.
+    //
+    // Rules:
+    //   - Component names MUST start with a capital letter
+    //   - A component is just a function that returns JSX
+    // ============================================================
+
+    function Header() {
+      // Inline style objects use camelCase property names
+      // e.g., backgroundColor (not background-color)
+      const headerStyle = {
+        backgroundColor: '#1a237e',  // dark navy blue
+        color: '#ffffff',
+        padding: '24px 32px',
+        marginBottom: '32px',
+        borderRadius: '8px',
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+      };
+
+      const titleStyle = {
+        margin: '0 0 8px 0',
+        fontSize: '28px',
+        fontWeight: '700',
+      };
+
+      const subtitleStyle = {
+        margin: 0,
+        fontSize: '16px',
+        opacity: 0.85,
+      };
+
+      // JSX looks like HTML but it is really JavaScript.
+      // Notice className instead of class — this is a JSX rule.
+      return (
+        <header style={headerStyle}>
+          <h1 style={titleStyle}>Lesson 26: React Basics</h1>
+          <p style={subtitleStyle}>Components, Props, and JSX</p>
+        </header>
+      );
+    }
+
+
+    // ============================================================
+    // COMPONENT 2: StudentCard
+    // A component that accepts PROPS: name, score, grade.
+    //
+    // Props are passed like HTML attributes:
+    //   <StudentCard name="Alice" score={95} grade="A" />
+    //
+    // Inside the function, they arrive as a single object called
+    // "props". We destructure them for convenience:
+    //   function StudentCard({ name, score, grade })
+    // ============================================================
+
+    function StudentCard({ name, score, grade }) {
+      // We can compute values using the props we received
+      // Decide badge colour based on grade
+      const badgeColor =
+        grade === 'A' ? '#2e7d32' :  // green for A
+        grade === 'B' ? '#1565c0' :  // blue  for B
+        grade === 'C' ? '#e65100' :  // orange for C
+                        '#b71c1c';   // red for anything else
+
+      // Styles for the card container
+      const cardStyle = {
+        backgroundColor: '#ffffff',
+        border: '1px solid #e0e0e0',
+        borderRadius: '8px',
+        padding: '20px 24px',
+        width: '220px',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+      };
+
+      const nameStyle = {
+        fontSize: '18px',
+        fontWeight: '700',
+        color: '#1a237e',
+        margin: 0,
+      };
+
+      const scoreStyle = {
+        fontSize: '15px',
+        color: '#424242',
+        margin: 0,
+      };
+
+      // The badge uses a dynamic background colour from badgeColor above
+      const badgeStyle = {
+        display: 'inline-block',
+        backgroundColor: badgeColor,
+        color: '#ffffff',
+        borderRadius: '4px',
+        padding: '2px 10px',
+        fontSize: '14px',
+        fontWeight: '700',
+        width: 'fit-content',
+      };
+
+      return (
+        // JSX rule: return ONE root element
+        <div style={cardStyle}>
+          {/* Curly braces {} let us embed JavaScript expressions in JSX */}
+          <p style={nameStyle}>{name}</p>
+          <p style={scoreStyle}>Score: {score} / 100</p>
+          {/* The badge colour changes automatically based on the grade prop */}
+          <span style={badgeStyle}>Grade: {grade}</span>
+        </div>
+      );
+    }
+
+
+    // ============================================================
+    // COMPONENT 3: StudentList
+    // A list component that renders multiple StudentCards.
+    //
+    // Key concept: .map() turns an array of data into an array
+    // of JSX elements. React needs a unique "key" prop on each
+    // item so it can track changes efficiently.
+    // ============================================================
+
+    function StudentList({ students }) {
+      const sectionStyle = {
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        marginBottom: '32px',
+      };
+
+      const headingStyle = {
+        fontSize: '20px',
+        color: '#1a237e',
+        marginBottom: '16px',
+        borderBottom: '2px solid #1a237e',
+        paddingBottom: '8px',
+      };
+
+      // Flex container so the cards sit side-by-side (wrap on small screens)
+      const listStyle = {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '20px',
+      };
+
+      return (
+        <section style={sectionStyle}>
+          <h2 style={headingStyle}>Student Results</h2>
+
+          <div style={listStyle}>
+            {/*
+              .map() iterates over the students array.
+              For each student object we render one <StudentCard />.
+              The "key" prop must be unique — we use the student's id.
+              Self-closing tag style: <StudentCard ... />
+            */}
+            {students.map((student) => (
+              <StudentCard
+                key={student.id}
+                name={student.name}
+                score={student.score}
+                grade={student.grade}
+              />
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+
+    // ============================================================
+    // COMPONENT 4: SummaryBox
+    // Demonstrates computing derived data from props and
+    // displaying it in a tidy box. Shows that components can do
+    // real logic, not just display static text.
+    // ============================================================
+
+    function SummaryBox({ students }) {
+      // Compute the class average using regular JavaScript
+      const total = students.reduce((sum, s) => sum + s.score, 0);
+      const average = (total / students.length).toFixed(1);
+      const highest = Math.max(...students.map((s) => s.score));
+      const lowest  = Math.min(...students.map((s) => s.score));
+
+      const boxStyle = {
+        backgroundColor: '#e8eaf6',
+        border: '1px solid #9fa8da',
+        borderRadius: '8px',
+        padding: '20px 24px',
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        marginBottom: '32px',
+        maxWidth: '400px',
+      };
+
+      const headingStyle = {
+        fontSize: '18px',
+        fontWeight: '700',
+        color: '#1a237e',
+        marginTop: 0,
+        marginBottom: '12px',
+      };
+
+      const rowStyle = {
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: '6px',
+        fontSize: '15px',
+        color: '#37474f',
+      };
+
+      return (
+        <div style={boxStyle}>
+          <h3 style={headingStyle}>Class Summary</h3>
+          {/* Each row shows a label and a computed value */}
+          <div style={rowStyle}>
+            <span>Students enrolled:</span>
+            <strong>{students.length}</strong>
+          </div>
+          <div style={rowStyle}>
+            <span>Class average:</span>
+            <strong>{average}</strong>
+          </div>
+          <div style={rowStyle}>
+            <span>Highest score:</span>
+            <strong>{highest}</strong>
+          </div>
+          <div style={rowStyle}>
+            <span>Lowest score:</span>
+            <strong>{lowest}</strong>
+          </div>
+        </div>
+      );
+    }
+
+
+    // ============================================================
+    // COMPONENT 5: JSXNotesBox
+    // A purely informational component — shows JSX rules as a
+    // visual reference card inside the running app itself.
+    // ============================================================
+
+    function JSXNotesBox() {
+      const boxStyle = {
+        backgroundColor: '#fff8e1',
+        border: '1px solid #ffe082',
+        borderRadius: '8px',
+        padding: '20px 24px',
+        fontFamily: 'Segoe UI, Arial, sans-serif',
+        marginBottom: '32px',
+      };
+
+      const headingStyle = {
+        fontSize: '18px',
+        fontWeight: '700',
+        color: '#e65100',
+        marginTop: 0,
+        marginBottom: '12px',
+      };
+
+      const listStyle = {
+        paddingLeft: '20px',
+        margin: 0,
+        fontSize: '14px',
+        color: '#37474f',
+        lineHeight: '1.8',
+      };
+
+      const codeStyle = {
+        backgroundColor: '#ffe082',
+        borderRadius: '3px',
+        padding: '1px 5px',
+        fontFamily: 'Consolas, monospace',
+        fontSize: '13px',
+      };
+
+      return (
+        <div style={boxStyle}>
+          <h3 style={headingStyle}>JSX Quick-Reference</h3>
+          <ul style={listStyle}>
+            <li>
+              Use <code style={codeStyle}>className</code> instead of{' '}
+              <code style={codeStyle}>class</code> — "class" is reserved in JavaScript
+            </li>
+            <li>
+              Every tag must close: <code style={codeStyle}>&lt;br /&gt;</code>,{' '}
+              <code style={codeStyle}>&lt;img /&gt;</code>, <code style={codeStyle}>&lt;input /&gt;</code>
+            </li>
+            <li>
+              Embed JS expressions with curly braces:{' '}
+              <code style={codeStyle}>{'{ name }'}</code>
+            </li>
+            <li>
+              A component must return ONE root element — wrap siblings in{' '}
+              <code style={codeStyle}>{'<div>'}</code> or{' '}
+              <code style={codeStyle}>{'<>...</>'}</code>
+            </li>
+            <li>
+              Component names start with a Capital letter:{' '}
+              <code style={codeStyle}>{'<StudentCard />'}</code> not{' '}
+              <code style={codeStyle}>{'<studentCard />'}</code>
+            </li>
+            <li>
+              Inline styles are objects with camelCase keys:{' '}
+              <code style={codeStyle}>backgroundColor</code> not{' '}
+              <code style={codeStyle}>background-color</code>
+            </li>
+          </ul>
+        </div>
+      );
+    }
+
+
+    // ============================================================
+    // ROOT COMPONENT: App
+    // This is the top-level component that composes everything
+    // together. It defines the data and passes it down as props.
+    //
+    // Data flows ONE WAY in React: parent → child via props.
+    // The App knows about students; StudentList and StudentCard
+    // only know what they are given.
+    // ============================================================
+
+    function App() {
+      // Hardcoded array of student objects — the "data source"
+      // In a real app this would come from an API or a database
+      const students = [
+        { id: 1, name: 'Alice Johnson',  score: 94, grade: 'A' },
+        { id: 2, name: 'Ben Carter',     score: 81, grade: 'B' },
+        { id: 3, name: 'Clara Mendes',   score: 73, grade: 'C' },
+        { id: 4, name: 'David Kim',      score: 58, grade: 'D' },
+      ];
+
+      const pageStyle = {
+        maxWidth: '900px',
+        margin: '32px auto',
+        padding: '0 24px',
+      };
+
+      return (
+        // One root element wraps everything — JSX rule
+        <div style={pageStyle}>
+
+          {/* Component 1: Header — no props needed */}
+          <Header />
+
+          {/* Component 5: JSX notes — useful reminder while learning */}
+          <JSXNotesBox />
+
+          {/*
+            Component 3: StudentList — receives the students array as a prop.
+            StudentList internally renders one StudentCard per student.
+            This is COMPOSITION: App > StudentList > StudentCard
+          */}
+          <StudentList students={students} />
+
+          {/*
+            Component 4: SummaryBox — also receives the students array.
+            Same data, different presentation. Reuse is a React superpower.
+          */}
+          <SummaryBox students={students} />
+
+        </div>
+      );
+    }
+
+
+    // ============================================================
+    // RENDER
+    // This is the entry point. ReactDOM.createRoot() targets our
+    // <div id="root"> in the HTML, then .render() puts the App
+    // component (and all its children) into that div.
+    //
+    // React takes over from here — the entire UI lives in <App />.
+    // ============================================================
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+
+  </script>
+</body>
+</html>

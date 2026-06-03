@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 38 — Search & Filter</title>
+
+  <!-- React and Babel loaded from CDN — no build step needed for this lesson -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* -------------------------------------------------------
+       Basic reset and layout
+    ------------------------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 4px;
+      color: #2d3748;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #718096;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    /* -------------------------------------------------------
+       Search input
+    ------------------------------------------------------- */
+    .search-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus { border-color: #4299e1; }
+
+    /* -------------------------------------------------------
+       Filter panel
+    ------------------------------------------------------- */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 4px;
+    }
+
+    .filter-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: #4299e1;
+    }
+
+    .slider-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #2b6cb0;
+      min-width: 28px;
+      text-align: right;
+    }
+
+    .grade-checkboxes {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .grade-checkboxes label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: pointer;
+    }
+
+    .grade-checkboxes input[type="checkbox"] {
+      accent-color: #4299e1;
+      width: 15px;
+      height: 15px;
+    }
+
+    /* -------------------------------------------------------
+       Sort row
+    ------------------------------------------------------- */
+    .sort-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+    }
+
+    select:focus { border-color: #4299e1; }
+
+    /* -------------------------------------------------------
+       Clear button
+    ------------------------------------------------------- */
+    .btn-clear {
+      padding: 8px 16px;
+      background: #fff;
+      border: 1px solid #e53e3e;
+      color: #e53e3e;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-clear:hover { background: #fff5f5; }
+
+    /* -------------------------------------------------------
+       Results header
+    ------------------------------------------------------- */
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .results-count {
+      font-size: 0.9rem;
+      color: #4a5568;
+    }
+
+    .results-count strong { color: #2d3748; }
+
+    /* -------------------------------------------------------
+       Student table
+    ------------------------------------------------------- */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    thead tr {
+      background: #ebf8ff;
+    }
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      color: #2b6cb0;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #e2e8f0;
+      transition: background 0.1s;
+    }
+
+    tbody tr:hover { background: #f7fafc; }
+
+    td {
+      padding: 10px 14px;
+      color: #2d3748;
+    }
+
+    /* Grade badges */
+    .grade-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .grade-A { background: #c6f6d5; color: #276749; }
+    .grade-B { background: #bee3f8; color: #2b6cb0; }
+    .grade-C { background: #fefcbf; color: #744210; }
+    .grade-D { background: #fed7aa; color: #7b341e; }
+    .grade-F { background: #fed7d7; color: #822727; }
+
+    /* -------------------------------------------------------
+       Loading / empty states
+    ------------------------------------------------------- */
+    .state-msg {
+      text-align: center;
+      padding: 32px;
+      color: #a0aec0;
+      font-size: 0.95rem;
+    }
+
+    /* -------------------------------------------------------
+       Pagination
+    ------------------------------------------------------- */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-page {
+      padding: 6px 12px;
+      border: 1px solid #cbd5e0;
+      background: #fff;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-page:hover:not(:disabled) {
+      background: #ebf8ff;
+      border-color: #4299e1;
+    }
+
+    .btn-page:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .btn-page.active {
+      background: #4299e1;
+      border-color: #4299e1;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* -------------------------------------------------------
+       Error banner
+    ------------------------------------------------------- */
+    .error-banner {
+      background: #fff5f5;
+      border: 1px solid #fc8181;
+      color: #c53030;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Lesson 38 — Search &amp; Filter</h1>
+<p class="subtitle">Live search with debouncing, dynamic SQL filters, and pagination</p>
+
+<div id="root"></div>
+
+<script type="text/babel">
+// ============================================================
+// LESSON 38 FRONTEND: Search & Filter with Live API Queries
+// ============================================================
+// Key concepts shown here:
+//   1. Debouncing   — wait 300ms after the user stops typing
+//                     before sending a request (avoids a flood
+//                     of requests on every keystroke).
+//   2. Query string building — turn React state into URL params.
+//   3. Pagination   — Previous / page numbers / Next.
+//   4. Controlled inputs — React state drives every filter.
+// ============================================================
+
+const { useState, useEffect, useRef, useCallback } = React;
+
+// The base URL of the ASP.NET API started in Lesson38Api
+const API_BASE = "http://localhost:5038/api/students";
+
+// All grades the API recognises
+const ALL_GRADES = ["A", "B", "C", "D", "F"];
+
+// ============================================================
+// CUSTOM HOOK: useDebounce
+// Returns a "debounced" version of a value.
+// The debounced value only updates after the user has stopped
+// changing it for `delay` milliseconds.
+//
+// Example:
+//   const debounced = useDebounce(searchText, 300);
+//   // debounced lags 300ms behind searchText
+// ============================================================
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    // Set a timer to update the debounced value after `delay` ms
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+
+    // If the value changes before the timer fires, clear the old
+    // timer and start a fresh one. This is the debounce mechanism.
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// ============================================================
+// MAIN APP COMPONENT
+// ============================================================
+function App() {
+  // --- Filter state (each piece of state drives one filter) ---
+  const [searchText, setSearchText]   = useState("");
+  const [minScore,   setMinScore]     = useState(0);
+  const [maxScore,   setMaxScore]     = useState(100);
+  const [grades,     setGrades]       = useState([]);    // selected grade letters
+  const [sortBy,     setSortBy]       = useState("name");
+  const [sortOrder,  setSortOrder]    = useState("asc");
+  const [page,       setPage]         = useState(1);
+  const [pageSize]                    = useState(10);    // fixed for this demo
+
+  // --- Response state ---
+  const [results,    setResults]      = useState([]);
+  const [total,      setTotal]        = useState(0);
+  const [totalPages, setTotalPages]   = useState(1);
+  const [loading,    setLoading]      = useState(false);
+  const [error,      setError]        = useState(null);
+
+  // --------------------------------------------------------
+  // DEBOUNCE THE SEARCH TEXT
+  // We debounce only the free-text search input because the
+  // user types quickly and we don't want a request per key.
+  // Sliders and checkboxes fire fewer events so no debounce
+  // is needed for them.
+  // --------------------------------------------------------
+  const debouncedSearch = useDebounce(searchText, 300);
+
+  // --------------------------------------------------------
+  // BUILD THE QUERY STRING
+  // Convert the current filter state into URL parameters.
+  // URLSearchParams handles encoding special characters.
+  // --------------------------------------------------------
+  function buildQueryString() {
+    const params = new URLSearchParams();
+
+    if (debouncedSearch) params.set("search",    debouncedSearch);
+    if (minScore > 0)    params.set("minScore",  minScore);
+    if (maxScore < 100)  params.set("maxScore",  maxScore);
+    if (grades.length)   params.set("grade",     grades.join(","));
+
+    params.set("sortBy",    sortBy);
+    params.set("sortOrder", sortOrder);
+    params.set("page",      page);
+    params.set("pageSize",  pageSize);
+
+    return params.toString();
+  }
+
+  // --------------------------------------------------------
+  // FETCH DATA FROM THE API
+  // Called whenever any filter or page changes.
+  // useEffect re-runs when its dependency array changes.
+  // --------------------------------------------------------
+  useEffect(() => {
+    const qs  = buildQueryString();
+    const url = `${API_BASE}?${qs}`;
+
+    setLoading(true);
+    setError(null);
+
+    fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        return res.json();
+      })
+      .then(json => {
+        // The API returns { data, total, page, pageSize, totalPages }
+        setResults(json.data);
+        setTotal(json.total);
+        setTotalPages(json.totalPages);
+      })
+      .catch(err => {
+        setError("Could not reach the API. Make sure the Lesson38Api is running on port 5038.");
+        console.error(err);
+      })
+      .finally(() => setLoading(false));
+
+  // Re-run whenever any of these values change:
+  }, [debouncedSearch, minScore, maxScore, grades, sortBy, sortOrder, page, pageSize]);
+
+  // --------------------------------------------------------
+  // When the search text, filters, or sort changes, jump
+  // back to page 1 so the user sees the first results.
+  // --------------------------------------------------------
+  useEffect(() => { setPage(1); }, [debouncedSearch, minScore, maxScore, grades, sortBy, sortOrder]);
+
+  // --------------------------------------------------------
+  // GRADE CHECKBOX HANDLER
+  // Toggle a grade letter in/out of the selected grades array.
+  // --------------------------------------------------------
+  function toggleGrade(grade) {
+    setGrades(prev =>
+      prev.includes(grade)
+        ? prev.filter(g => g !== grade)   // remove if already selected
+        : [...prev, grade]                 // add if not selected
+    );
+  }
+
+  // --------------------------------------------------------
+  // CLEAR ALL FILTERS
+  // Reset every filter back to its default value.
+  // --------------------------------------------------------
+  function clearFilters() {
+    setSearchText("");
+    setMinScore(0);
+    setMaxScore(100);
+    setGrades([]);
+    setSortBy("name");
+    setSortOrder("asc");
+    setPage(1);
+  }
+
+  // --------------------------------------------------------
+  // PAGINATION: generate the list of page number buttons
+  // Show at most 5 page buttons centred around the current page.
+  // --------------------------------------------------------
+  function getPageNumbers() {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const start = Math.max(1, page - 2);
+    const end   = Math.min(totalPages, start + 4);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }
+
+  // Calculate display range for "Showing X–Y of Z"
+  const firstItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastItem  = Math.min(page * pageSize, total);
+
+  return (
+    <div>
+
+      {/* ---- Search bar ---- */}
+      <div className="card">
+        <div className="search-row">
+          <input
+            className="search-input"
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+          />
+          {/* Show a subtle indicator while debouncing */}
+          {searchText !== debouncedSearch && (
+            <span style={{ fontSize: "0.8rem", color: "#a0aec0" }}>typing…</span>
+          )}
+          <button className="btn-clear" onClick={clearFilters}>
+            Clear all filters
+          </button>
+        </div>
+      </div>
+
+      {/* ---- Filter panel ---- */}
+      <div className="card">
+        <div className="filter-grid">
+
+          {/* Min score slider */}
+          <div className="filter-group">
+            <label>Min Score</label>
+            <div className="slider-row">
+              <input
+                type="range" min={0} max={100} step={5}
+                value={minScore}
+                onChange={e => setMinScore(Number(e.target.value))}
+              />
+              <span className="slider-value">{minScore}</span>
+            </div>
+          </div>
+
+          {/* Max score slider */}
+          <div className="filter-group">
+            <label>Max Score</label>
+            <div className="slider-row">
+              <input
+                type="range" min={0} max={100} step={5}
+                value={maxScore}
+                onChange={e => setMaxScore(Number(e.target.value))}
+              />
+              <span className="slider-value">{maxScore}</span>
+            </div>
+          </div>
+
+          {/* Grade checkboxes */}
+          <div className="filter-group">
+            <label>Grade</label>
+            <div className="grade-checkboxes">
+              {ALL_GRADES.map(g => (
+                <label key={g}>
+                  <input
+                    type="checkbox"
+                    checked={grades.includes(g)}
+                    onChange={() => toggleGrade(g)}
+                  />
+                  {g}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Sort controls */}
+          <div className="filter-group">
+            <label>Sort</label>
+            <div className="sort-row">
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                <option value="name">By Name</option>
+                <option value="score">By Score</option>
+              </select>
+              <select value={sortOrder} onChange={e => setSortOrder(e.target.value)}>
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ---- Error banner ---- */}
+      {error && <div className="error-banner">{error}</div>}
+
+      {/* ---- Results card ---- */}
+      <div className="card">
+
+        {/* Results count */}
+        <div className="results-header">
+          <div className="results-count">
+            {loading
+              ? "Loading…"
+              : total === 0
+                ? "No students found"
+                : <>Showing <strong>{firstItem}–{lastItem}</strong> of <strong>{total}</strong> student{total !== 1 ? "s" : ""}</>
+            }
+          </div>
+        </div>
+
+        {/* Table */}
+        {loading ? (
+          <div className="state-msg">Fetching results…</div>
+        ) : results.length === 0 && !error ? (
+          <div className="state-msg">No students match your filters.</div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Score</th>
+                  <th>Grade</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((s, idx) => (
+                  <tr key={s.id}>
+                    <td>{firstItem + idx}</td>
+                    <td>{s.name}</td>
+                    <td>{s.email}</td>
+                    <td>{s.score}</td>
+                    <td>
+                      <span className={`grade-badge grade-${s.grade}`}>{s.grade}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ---- Pagination ---- */}
+        {totalPages > 1 && (
+          <div className="pagination">
+
+            {/* Previous button */}
+            <button
+              className="btn-page"
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+            >
+              &laquo; Previous
+            </button>
+
+            {/* Page number buttons
+                getPageNumbers() returns an array like [1, 2, 3, 4, 5]
+                We highlight the current page with the "active" class. */}
+            {getPageNumbers().map(n => (
+              <button
+                key={n}
+                className={`btn-page ${n === page ? "active" : ""}`}
+                onClick={() => setPage(n)}
+              >
+                {n}
+              </button>
+            ))}
+
+            {/* Next button */}
+            <button
+              className="btn-page"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => p + 1)}
+            >
+              Next &raquo;
+            </button>
+
+          </div>
+        )}
+
+      </div>
+
+      {/* ---- Lesson notes ---- */}
+      <div className="card" style={{ fontSize: "0.85rem", color: "#4a5568", lineHeight: 1.7 }}>
+        <strong>How this works:</strong>
+        <ul style={{ marginTop: 8, paddingLeft: 20 }}>
+          <li><strong>Debouncing:</strong> The search box waits 300ms after you stop typing before calling the API — no request spam on every keystroke.</li>
+          <li><strong>Query string:</strong> Every filter is encoded as a URL parameter (e.g. <code>?search=ali&amp;minScore=80&amp;grade=A,B</code>) and sent to the API.</li>
+          <li><strong>Dynamic SQL:</strong> The API builds a WHERE clause only for the filters you actually provided. All values use <code>$parameters</code> to prevent SQL injection.</li>
+          <li><strong>Pagination:</strong> SQL uses <code>LIMIT</code> and <code>OFFSET</code>. The API also returns <code>total</code> so the frontend can calculate page numbers.</li>
+        </ul>
+      </div>
+
+    </div>
+  );
+}
+
+// Mount the React app into the #root div
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

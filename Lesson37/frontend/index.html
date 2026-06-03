@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson 37 – Full CRUD UI</title>
+
+  <!--
+    React and ReactDOM are loaded from a CDN so we need no build step.
+    Babel transpiles JSX (the HTML-like syntax inside JavaScript) in the browser.
+    This is fine for learning — production apps use a proper build tool.
+  -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      color: #222;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 1.6rem; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    /* ── Add Form ── */
+    .add-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .add-form label { display: flex; flex-direction: column; font-size: 0.8rem; color: #555; gap: 4px; }
+    .add-form input {
+      padding: 7px 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 0.95rem;
+      width: 180px;
+    }
+    .add-form input:focus { outline: none; border-color: #4a6cf7; }
+    .add-form .score-input { width: 80px; }
+    .form-actions { display: flex; gap: 8px; }
+
+    /* ── Toolbar ── */
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .toolbar h2 { font-size: 1rem; }
+
+    /* ── Buttons ── */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      padding: 7px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: opacity .15s, transform .1s;
+    }
+    button:hover:not(:disabled) { opacity: .85; }
+    button:active:not(:disabled) { transform: scale(.97); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-primary  { background: #4a6cf7; color: #fff; }
+    .btn-success  { background: #22c55e; color: #fff; }
+    .btn-danger   { background: #ef4444; color: #fff; }
+    .btn-warning  { background: #f59e0b; color: #fff; }
+    .btn-ghost    { background: #e5e7eb; color: #333; }
+    .btn-sm       { padding: 4px 10px; font-size: 0.78rem; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    thead { background: #f8f9fc; }
+    th {
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 700;
+      color: #444;
+      border-bottom: 2px solid #e5e7eb;
+      white-space: nowrap;
+    }
+    /* Sortable column headers show a cursor and sort indicator */
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    th.sortable:hover { color: #4a6cf7; }
+    .sort-icon { margin-left: 4px; opacity: .5; font-style: normal; }
+    .sort-icon.active { opacity: 1; color: #4a6cf7; }
+
+    td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr.editing { background: #fafbff; }
+
+    /* ── Inline Edit Fields ── */
+    .edit-input {
+      padding: 4px 8px;
+      border: 1px solid #4a6cf7;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      width: 100%;
+    }
+    .edit-score { width: 60px; }
+
+    /* ── Grade Badge ── */
+    .grade {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+    .grade-A { background: #dcfce7; color: #166534; }
+    .grade-B { background: #dbeafe; color: #1e40af; }
+    .grade-C { background: #fef9c3; color: #713f12; }
+    .grade-D { background: #ffedd5; color: #7c2d12; }
+    .grade-F { background: #fee2e2; color: #7f1d1d; }
+
+    /* ── Action buttons cell ── */
+    .actions { display: flex; gap: 6px; flex-wrap: nowrap; }
+
+    /* ── Loading / Empty states ── */
+    .state-row td { text-align: center; padding: 32px; color: #888; }
+
+    /* ── Toast notifications ── */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1000;
+    }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+      animation: slideIn .2s ease;
+      max-width: 300px;
+    }
+    .toast-success { background: #22c55e; color: #fff; }
+    .toast-error   { background: #ef4444; color: #fff; }
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    /* ── Error banner ── */
+    .error-banner {
+      background: #fee2e2;
+      color: #7f1d1d;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<!--
+  type="text/babel" tells Babel to transpile this script from JSX to plain JS.
+  In a real project you would use Vite or Create React App instead.
+-->
+<script type="text/babel">
+  const { useState, useEffect, useRef } = React;
+
+  // ============================================================
+  // CONFIG
+  // Change this if your API runs on a different port.
+  // ============================================================
+  const API_BASE = "http://localhost:5000/api/students";
+
+
+  // ============================================================
+  // GRADE HELPER
+  // Mirrors the server-side logic so we can compute grades
+  // locally for optimistic updates without waiting for the API.
+  // ============================================================
+  function getGrade(score) {
+    if (score >= 90) return "A";
+    if (score >= 80) return "B";
+    if (score >= 70) return "C";
+    if (score >= 60) return "D";
+    return "F";
+  }
+
+
+  // ============================================================
+  // TOAST — tiny notification system
+  // Each toast auto-dismisses after 3 seconds.
+  // ============================================================
+  function ToastContainer({ toasts }) {
+    return (
+      <div className="toast-container">
+        {toasts.map(t => (
+          <div key={t.id} className={`toast toast-${t.type}`}>{t.message}</div>
+        ))}
+      </div>
+    );
+  }
+
+  function useToast() {
+    const [toasts, setToasts] = useState([]);
+
+    function addToast(message, type = "success") {
+      const id = Date.now();
+      setToasts(prev => [...prev, { id, message, type }]);
+      // Remove the toast after 3 seconds
+      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+    }
+
+    return { toasts, addToast };
+  }
+
+
+  // ============================================================
+  // ADD STUDENT FORM
+  // Shown above the table when the user clicks "+ Add Student".
+  // On submit it calls the parent's onCreate handler.
+  // ============================================================
+  function AddForm({ onSave, onCancel }) {
+    const [form, setForm] = useState({ name: "", email: "", score: "" });
+    const nameRef = useRef(null);
+
+    // Auto-focus the Name field when the form opens
+    useEffect(() => { nameRef.current?.focus(); }, []);
+
+    function handleChange(e) {
+      setForm({ ...form, [e.target.name]: e.target.value });
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const score = parseInt(form.score, 10);
+      if (!form.name.trim() || !form.email.trim()) return;
+      if (isNaN(score) || score < 0 || score > 100) return;
+      onSave({ name: form.name.trim(), email: form.email.trim(), score });
+    }
+
+    return (
+      <div className="card">
+        <form className="add-form" onSubmit={handleSubmit}>
+          <label>
+            Name
+            <input ref={nameRef} name="name" placeholder="Full name"
+              value={form.name} onChange={handleChange} required />
+          </label>
+          <label>
+            Email
+            <input name="email" type="email" placeholder="email@example.com"
+              value={form.email} onChange={handleChange} required />
+          </label>
+          <label>
+            Score (0–100)
+            <input name="score" type="number" min="0" max="100"
+              placeholder="0-100" className="score-input"
+              value={form.score} onChange={handleChange} required />
+          </label>
+          <div className="form-actions">
+            <button type="submit" className="btn-success">Add Student</button>
+            <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+
+  // ============================================================
+  // STUDENT ROW
+  // Renders either a read-only row or an inline-editable row.
+  //
+  // Inline editing flow:
+  //   1. User clicks Edit  → isEditing becomes true
+  //   2. Fields become <input> elements pre-filled with current values
+  //   3. User changes values, clicks Save
+  //   4. onSave is called with the updated student object
+  //   5. Parent applies optimistic update, then calls the API
+  // ============================================================
+  function StudentRow({ student, onSave, onDelete }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [draft, setDraft] = useState({
+      name: student.name,
+      email: student.email,
+      score: student.score
+    });
+
+    // Reset draft whenever the underlying student changes (e.g. after rollback)
+    useEffect(() => {
+      setDraft({ name: student.name, email: student.email, score: student.score });
+    }, [student]);
+
+    function handleChange(e) {
+      setDraft({ ...draft, [e.target.name]: e.target.value });
+    }
+
+    function handleSave() {
+      const score = parseInt(draft.score, 10);
+      if (!draft.name.trim() || !draft.email.trim()) return;
+      if (isNaN(score) || score < 0 || score > 100) return;
+      onSave(student.id, { name: draft.name.trim(), email: draft.email.trim(), score });
+      setIsEditing(false);
+    }
+
+    function handleCancel() {
+      // Revert draft back to original values
+      setDraft({ name: student.name, email: student.email, score: student.score });
+      setIsEditing(false);
+    }
+
+    function handleDelete() {
+      // window.confirm is a simple built-in dialog — no extra library needed
+      if (window.confirm(`Delete ${student.name}? This cannot be undone.`)) {
+        onDelete(student.id);
+      }
+    }
+
+    const gradeClass = `grade grade-${student.grade}`;
+
+    if (isEditing) {
+      return (
+        <tr className="editing">
+          <td>{student.id}</td>
+          <td>
+            <input className="edit-input" name="name"
+              value={draft.name} onChange={handleChange} />
+          </td>
+          <td>
+            <input className="edit-input" name="email" type="email"
+              value={draft.email} onChange={handleChange} />
+          </td>
+          <td>
+            <input className="edit-input edit-score" name="score" type="number"
+              min="0" max="100" value={draft.score} onChange={handleChange} />
+          </td>
+          <td>
+            {/* Grade preview updates live as the user types a new score */}
+            <span className={`grade grade-${getGrade(parseInt(draft.score)||0)}`}>
+              {getGrade(parseInt(draft.score)||0)}
+            </span>
+          </td>
+          <td>
+            <div className="actions">
+              <button className="btn-success btn-sm" onClick={handleSave}>Save</button>
+              <button className="btn-ghost btn-sm" onClick={handleCancel}>Cancel</button>
+            </div>
+          </td>
+        </tr>
+      );
+    }
+
+    return (
+      <tr>
+        <td>{student.id}</td>
+        <td>{student.name}</td>
+        <td>{student.email}</td>
+        <td>{student.score}</td>
+        <td><span className={gradeClass}>{student.grade}</span></td>
+        <td>
+          <div className="actions">
+            <button className="btn-warning btn-sm" onClick={() => setIsEditing(true)}>Edit</button>
+            <button className="btn-danger btn-sm" onClick={handleDelete}>Delete</button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
+
+  // ============================================================
+  // SORTABLE COLUMN HEADER
+  // Clicking the same column toggles asc/desc.
+  // Clicking a different column sorts by that column ascending.
+  // ============================================================
+  function SortableHeader({ label, field, sortField, sortDir, onSort }) {
+    const isActive = sortField === field;
+    const arrow = isActive ? (sortDir === "asc" ? "▲" : "▼") : "⇅";
+    return (
+      <th className="sortable" onClick={() => onSort(field)}>
+        {label}
+        <i className={`sort-icon ${isActive ? "active" : ""}`}>{arrow}</i>
+      </th>
+    );
+  }
+
+
+  // ============================================================
+  // MAIN APP
+  // Owns all state: student list, loading, errors, toasts.
+  //
+  // OPTIMISTIC UPDATE PATTERN:
+  //   1. Apply the change to the local list immediately.
+  //   2. Send the API request in the background.
+  //   3. If the API succeeds → replace the optimistic value with
+  //      the server's authoritative response.
+  //   4. If the API fails   → roll back to the previous list and
+  //      show an error toast.
+  //
+  // Why optimistic updates?
+  //   The UI feels instant even on slow networks. The user sees
+  //   the result right away; errors are rare and handled gracefully.
+  // ============================================================
+  function App() {
+    const [students, setStudents]     = useState([]);
+    const [loading, setLoading]       = useState(true);
+    const [fetchError, setFetchError] = useState(null);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [sortField, setSortField]   = useState("id");
+    const [sortDir, setSortDir]       = useState("asc");
+
+    const { toasts, addToast } = useToast();
+
+
+    // ── Initial Load ──────────────────────────────────────────
+    // Fetch all students when the component mounts (page loads).
+    useEffect(() => {
+      fetchStudents();
+    }, []);
+
+    async function fetchStudents() {
+      setLoading(true);
+      setFetchError(null);
+      try {
+        const res = await fetch(API_BASE);
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
+        // Normalise keys to camelCase so the rest of the UI is consistent
+        setStudents(data.map(normalise));
+      } catch (err) {
+        setFetchError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // The API returns PascalCase (C# convention); convert to camelCase for JS.
+    function normalise(s) {
+      return {
+        id:    s.Id    ?? s.id,
+        name:  s.Name  ?? s.name,
+        email: s.Email ?? s.email,
+        score: s.Score ?? s.score,
+        grade: s.Grade ?? s.grade ?? getGrade(s.Score ?? s.score)
+      };
+    }
+
+
+    // ── CREATE ────────────────────────────────────────────────
+    async function handleCreate(formData) {
+      // Build an optimistic entry with a temporary negative Id
+      const tempId  = -(Date.now());
+      const optimistic = {
+        id:    tempId,
+        name:  formData.name,
+        email: formData.email,
+        score: formData.score,
+        grade: getGrade(formData.score)
+      };
+
+      // Step 1: show the new row immediately
+      setStudents(prev => [...prev, optimistic]);
+      setShowAddForm(false);
+
+      try {
+        // Step 2: send to API
+        const res = await fetch(API_BASE, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name:  formData.name,
+            email: formData.email,
+            score: formData.score
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Server error: ${res.status}`);
+        }
+
+        const created = normalise(await res.json());
+
+        // Step 3: replace the optimistic row with the real one (server assigned the Id)
+        setStudents(prev => prev.map(s => s.id === tempId ? created : s));
+        addToast(`${created.name} added successfully.`);
+
+      } catch (err) {
+        // Step 4: rollback — remove the optimistic row
+        setStudents(prev => prev.filter(s => s.id !== tempId));
+        addToast(err.message, "error");
+      }
+    }
+
+
+    // ── UPDATE ────────────────────────────────────────────────
+    async function handleUpdate(id, formData) {
+      // Remember the old value in case we need to roll back
+      const previous = students.find(s => s.id === id);
+
+      const updated = {
+        id,
+        name:  formData.name,
+        email: formData.email,
+        score: formData.score,
+        grade: getGrade(formData.score)
+      };
+
+      // Step 1: apply change to the list immediately
+      setStudents(prev => prev.map(s => s.id === id ? updated : s));
+
+      try {
+        // Step 2: send to API
+        const res = await fetch(`${API_BASE}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name:  formData.name,
+            email: formData.email,
+            score: formData.score
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Server error: ${res.status}`);
+        }
+
+        const saved = normalise(await res.json());
+
+        // Step 3: replace optimistic with server's authoritative copy
+        setStudents(prev => prev.map(s => s.id === id ? saved : s));
+        addToast(`${saved.name} updated.`);
+
+      } catch (err) {
+        // Step 4: rollback to previous values
+        if (previous) {
+          setStudents(prev => prev.map(s => s.id === id ? previous : s));
+        }
+        addToast(err.message, "error");
+      }
+    }
+
+
+    // ── DELETE ────────────────────────────────────────────────
+    async function handleDelete(id) {
+      const removed = students.find(s => s.id === id);
+
+      // Step 1: remove row immediately
+      setStudents(prev => prev.filter(s => s.id !== id));
+
+      try {
+        // Step 2: send to API
+        const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `Server error: ${res.status}`);
+        }
+
+        addToast(`${removed?.name ?? "Student"} deleted.`);
+
+      } catch (err) {
+        // Step 3: rollback — put the row back
+        if (removed) {
+          setStudents(prev => [...prev, removed]);
+        }
+        addToast(err.message, "error");
+      }
+    }
+
+
+    // ── SORT ──────────────────────────────────────────────────
+    // Clicking the same column header toggles direction.
+    // Clicking a different column resets direction to ascending.
+    function handleSort(field) {
+      if (field === sortField) {
+        setSortDir(d => d === "asc" ? "desc" : "asc");
+      } else {
+        setSortField(field);
+        setSortDir("asc");
+      }
+    }
+
+    // Sort a copy of the array — never mutate state directly
+    const sorted = [...students].sort((a, b) => {
+      let va = a[sortField], vb = b[sortField];
+      if (typeof va === "string") va = va.toLowerCase();
+      if (typeof vb === "string") vb = vb.toLowerCase();
+      if (va < vb) return sortDir === "asc" ? -1 :  1;
+      if (va > vb) return sortDir === "asc" ?  1 : -1;
+      return 0;
+    });
+
+    const sharedSortProps = { sortField, sortDir, onSort: handleSort };
+
+
+    // ── RENDER ────────────────────────────────────────────────
+    return (
+      <>
+        <ToastContainer toasts={toasts} />
+
+        <div className="container">
+          <h1>Lesson 37 – Full CRUD UI</h1>
+          <p className="subtitle">Add, edit, and delete students with optimistic updates.</p>
+
+          {/* Add Student form — shown inline above the table */}
+          {showAddForm && (
+            <AddForm
+              onSave={handleCreate}
+              onCancel={() => setShowAddForm(false)}
+            />
+          )}
+
+          {fetchError && (
+            <div className="error-banner">
+              Could not load students: {fetchError}.{" "}
+              <button className="btn-ghost btn-sm" onClick={fetchStudents}>Retry</button>
+            </div>
+          )}
+
+          <div className="card">
+            {/* Toolbar: title + Add button */}
+            <div className="toolbar">
+              <h2>Students ({students.length})</h2>
+              <button
+                className="btn-primary"
+                onClick={() => setShowAddForm(v => !v)}
+              >
+                {showAddForm ? "✕ Cancel" : "+ Add Student"}
+              </button>
+            </div>
+
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    {/* Each SortableHeader manages its own active/inactive styling */}
+                    <SortableHeader label="ID"    field="id"    {...sharedSortProps} />
+                    <SortableHeader label="Name"  field="name"  {...sharedSortProps} />
+                    <SortableHeader label="Email" field="email" {...sharedSortProps} />
+                    <SortableHeader label="Score" field="score" {...sharedSortProps} />
+                    <SortableHeader label="Grade" field="grade" {...sharedSortProps} />
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr className="state-row">
+                      <td colSpan="6">Loading students…</td>
+                    </tr>
+                  ) : sorted.length === 0 ? (
+                    <tr className="state-row">
+                      <td colSpan="6">No students yet. Click "+ Add Student" to begin.</td>
+                    </tr>
+                  ) : (
+                    sorted.map(student => (
+                      <StudentRow
+                        key={student.id}
+                        student={student}
+                        onSave={handleUpdate}
+                        onDelete={handleDelete}
+                      />
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+
+  // ── Mount React ────────────────────────────────────────────
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(<App />);
+</script>
+</body>
+</html>
