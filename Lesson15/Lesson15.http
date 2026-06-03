@@ -1,6 +1,28 @@
 @Lesson15_HostAddress = http://localhost:5050
 
-GET {{Lesson15_HostAddress}}/weatherforecast/
+### Simple hello message
+GET {{Lesson15_HostAddress}}/hello
+
+###
+
+### About the course
+GET {{Lesson15_HostAddress}}/about
 Accept: application/json
 
 ###
+
+### Current time
+GET {{Lesson15_HostAddress}}/time
+Accept: application/json
+
+###
+
+### All students
+GET {{Lesson15_HostAddress}}/students
+Accept: application/json
+
+###
+
+### Get student by ID (change 2 to any ID)
+GET {{Lesson15_HostAddress}}/students/2
+Accept: application/json
