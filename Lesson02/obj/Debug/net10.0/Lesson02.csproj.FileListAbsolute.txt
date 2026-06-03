@@ -1,0 +1,14 @@
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\bin\Debug\net10.0\Lesson02.exe
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\bin\Debug\net10.0\Lesson02.deps.json
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\bin\Debug\net10.0\Lesson02.runtimeconfig.json
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\bin\Debug\net10.0\Lesson02.dll
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\bin\Debug\net10.0\Lesson02.pdb
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\Lesson02.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\Lesson02.AssemblyInfoInputs.cache
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\Lesson02.AssemblyInfo.cs
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\Lesson02.csproj.CoreCompileInputs.cache
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\Lesson02.dll
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\refint\Lesson02.dll
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\Lesson02.pdb
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\Lesson02.genruntimeconfig.cache
+C:\Users\ricky\Dropbox\Apps\Chello\Lesson02\obj\Debug\net10.0\ref\Lesson02.dll
