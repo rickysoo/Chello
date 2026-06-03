@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chello — Lesson Simulator</title>
+
+  <!-- ============================================================
+       LESSON SIMULATOR
+       The C#, SQL and Web API lessons can't run inside a browser,
+       so this page does the next best thing:
+         1. Fetches the lesson's REAL source code and shows it
+            with syntax highlighting.
+         2. Shows a realistic SIMULATED run / output so you can see
+            what the program would print without installing anything.
+
+       Usage:  simulator.html?lesson=1   (lesson id 1-40)
+
+       Requires running from a local server (so fetch() can read the
+       source files). From the repo root:  python -m http.server 8080
+       ============================================================ -->
+
+  <!-- highlight.js for code colouring -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --dim:#94a3b8;
+      --primary:#38bdf8; --primary-2:#0ea5e9; --border:#334155;
+      --term-bg:#0b1120; --green:#22c55e; --radius:14px;
+    }
+    [data-theme="light"]{
+      --bg:#f1f5f9; --card:#fff; --text:#0f172a; --dim:#475569;
+      --primary:#0284c7; --primary-2:#0369a1; --border:#e2e8f0;
+      --term-bg:#0b1120;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;}
+    header{background:linear-gradient(135deg,#0c4a6e,#075985);padding:22px 20px;border-bottom:1px solid var(--border);}
+    [data-theme="light"] header{background:linear-gradient(135deg,#0ea5e9,#0284c7);}
+    .head-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+    .back{color:#e0f2fe;text-decoration:none;font-weight:600;font-size:.9rem;}
+    .back:hover{color:#fff;}
+    header h1{color:#fff;font-size:1.3rem;}
+    header .num{color:#bae6fd;font-size:.8rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;}
+    .container{max-width:1100px;margin:0 auto;padding:26px 20px 60px;}
+    .desc{color:var(--dim);margin-bottom:22px;font-size:1.02rem;}
+    .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:22px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.3);}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);}
+    .panel-head h2{font-size:.95rem;display:flex;align-items:center;gap:8px;}
+    .file-name{color:var(--dim);font-size:.8rem;font-family:monospace;}
+    pre{margin:0;max-height:520px;overflow:auto;}
+    pre code{font-family:'Consolas','Monaco',monospace;font-size:.82rem;padding:16px !important;display:block;}
+    /* Terminal */
+    .term{background:var(--term-bg);color:#d1fae5;font-family:'Consolas','Monaco',monospace;font-size:.85rem;padding:0;}
+    .term-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid #1e293b;}
+    .dot{width:11px;height:11px;border-radius:50%;}
+    .dot.r{background:#ef4444;} .dot.y{background:#eab308;} .dot.g{background:#22c55e;}
+    .term-cmd{color:#94a3b8;margin-left:8px;}
+    .term-body{padding:16px;white-space:pre-wrap;line-height:1.5;overflow:auto;max-height:520px;}
+    .run-btn{background:var(--primary);color:#04222e;border:none;border-radius:8px;padding:7px 16px;font-weight:700;cursor:pointer;font-size:.82rem;}
+    .run-btn:hover{background:var(--primary-2);}
+    .input-line{color:#fcd34d;} /* user-typed input highlighted */
+    .note{background:rgba(56,189,248,.08);border:1px solid var(--primary);border-radius:10px;padding:12px 16px;color:var(--text);font-size:.9rem;margin-bottom:22px;}
+    .err{background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:10px;padding:14px 16px;color:var(--text);}
+    .err a{color:var(--primary);}
+    .links{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+    .links a{color:var(--primary);text-decoration:none;font-size:.85rem;border:1px solid var(--border);padding:6px 12px;border-radius:8px;}
+    .links a:hover{border-color:var(--primary);}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="head-inner">
+      <a class="back" href="index.html">← Back to Dashboard</a>
+      <div style="text-align:right;">
+        <div class="num" id="lessonNum"></div>
+        <h1 id="lessonTitle">Lesson Simulator</h1>
+      </div>
+    </div>
+  </header>
+
+  <div class="container" id="content"></div>
+
+  <script>
+    // ============================================================
+    // SIMULATED OUTPUTS — one entry per code-based lesson.
+    //   files : real source files to fetch & display
+    //   lang  : highlight.js language
+    //   cmd   : the command you'd really type
+    //   kind  : "console" | "http" | "deploy" (just changes the label)
+    //   output: the realistic simulated run
+    // Lines that start with "» " are shown as user-typed input.
+    // ============================================================
+    const SIM = {
+      1: { title:"Hello World & Variables", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson01/Program.cs"],
+        output:
+`Hello, World!
+Welcome to C# programming!
+-----------------------------
+Name: Ricky
+Age: 30
+Height: 1.75m
+Learning C#: True
+-----------------------------
+10 + 3 = 13
+10 - 3 = 7
+10 x 3 = 30
+10 / 3 = 3
+10 mod 3 = 1
+-----------------------------
+What is your name? » Ada
+Nice to meet you, Ada!` },
+
+      2: { title:"If / Else Decisions", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson02/Program.cs"],
+        output:
+`=== Number Guessing Game ===
+I'm thinking of a number between 1 and 10.
+Your guess: » 3
+Too low! The answer was 7
+----------------------------
+Enter any number to check even/odd: » 8
+8 is EVEN
+----------------------------
+Enter your test score (0-100): » 85
+Grade: B - Good job!` },
+
+      3: { title:"Loops", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson03/Program.cs"],
+        output:
+`=== Number Guessing Game ===
+I'm thinking of a number between 1 and 10.
+Keep guessing until you get it!
+
+Your guess: » 5
+Too high! Try again.
+Your guess: » 2
+Too low! Try again.
+Your guess: » 3
+🎉 Correct! You got it in 3 attempts!
+
+⭐⭐ Great job! Very few guesses!
+
+--- For Loop Example ---
+Count: 1
+Count: 2
+Count: 3
+Count: 4
+Count: 5
+
+--- Greeting Everyone ---
+Hello, Alice!
+Hello, Bob!
+Hello, Charlie!
+Hello, Ricky!` },
+
+      4: { title:"Methods", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson04/Program.cs"],
+        output:
+`=== Calculator ===
+
+Welcome! Let's do some math.
+-------------------------------
+Enter first number: » 10
+Enter second number: » 4
+
+--- Results ---
+10 + 4 = 14
+10 - 4 = 6
+10 x 4 = 40
+10 / 4 = 2.5
+
+Thanks for using the calculator!` },
+
+      5: { title:"Lists & Arrays", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson05/Program.cs"],
+        output:
+`=== To-Do List App ===
+
+  1 - View   2 - Add   3 - Remove   4 - Clear   5 - Quit
+Your choice: » 2
+Enter task name: » Buy groceries
+✅ Task added: Buy groceries
+
+Your choice: » 2
+Enter task name: » Study C#
+✅ Task added: Study C#
+
+Your choice: » 1
+📋 Your Tasks (2 total):
+------------------------------
+  1. Buy groceries
+  2. Study C#
+------------------------------
+
+Your choice: » 3
+Enter task number to remove: » 1
+✅ Removed: Buy groceries
+
+Your choice: » 5
+Goodbye! Stay productive! 👋` },
+
+      6: { title:"Classes & Objects", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson06/BankAccount.cs","Lesson06/Program.cs"],
+        output:
+`=== Bank App ===
+
+Active Account: Ricky
+Your choice: » 1
+------------------------------
+👤 Owner:   Ricky
+🔢 Account: ACC-001
+💰 Balance: $1000
+------------------------------
+
+Your choice: » 2
+Deposit amount: $ » 500
+✅ Deposited $500 successfully.
+
+Your choice: » 3
+Withdraw amount: $ » 5000
+❌ Insufficient funds! Your balance is $1500
+
+Your choice: » 6
+Goodbye! 👋` },
+
+      7: { title:"Error Handling", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson07/Program.cs"],
+        output:
+`=== Safe Calculator ===
+This calculator handles all mistakes gracefully.
+
+  1 - Calculate   2 - Quit
+Your choice: » 1
+Enter first number:  » abc
+  ⚠️  That's not a valid number. Try again.
+Enter first number:  » 10
+Enter second number: » 0
+Choose operation:
+  + - * /
+Your choice: » /
+❌ Error: Cannot divide by zero!
+--- Calculation attempt complete ---
+
+Your choice: » 2
+Goodbye! 👋` },
+
+      8: { title:"File Read & Write", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson08/Program.cs"],
+        output:
+`📋 No saved tasks found. Starting fresh!
+=== To-Do List (with File Save) ===
+Your tasks are saved automatically!
+
+Your choice: » 2
+Enter task name: » Study C#
+💾 Tasks saved to file.
+✅ Task added: Study C#
+
+Your choice: » 5
+Goodbye! Your tasks are saved. 👋
+
+──────── (run the app again) ────────
+
+✅ Loaded 1 tasks from file.
+Your choice: » 1
+📋 Your Tasks (1 total):
+------------------------------
+  1. Study C#
+------------------------------` },
+
+      9: { title:"SQL Basics", lang:"sql", cmd:"Run in SSMS (F5)", kind:"console",
+        files:["Lesson09/01_CreateDatabase.sql","Lesson09/02_CreateTable.sql","Lesson09/03_InsertData.sql","Lesson09/04_SelectData.sql","Lesson09/05_UpdateDelete.sql"],
+        output:
+`Database ChelloApp created successfully!
+Table Students created successfully!
+5 students inserted successfully!
+
+-- SELECT * FROM Students ORDER BY Score DESC
+Id  FirstName  LastName  Email              Score
+1   Ricky      Soo       ricky@email.com    95
+2   Alice      Wong      alice@email.com    88
+3   Bob        Tan       bob@email.com      72
+4   Charlie    Lim       charlie@email.com  60
+5   Diana      Lee       diana@email.com    45
+
+TotalStudents : 5    HighestScore : 95
+LowestScore   : 45   AverageScore : 72
+
+-- after UPDATE (Bob → 80) and DELETE (Diana)
+1   Ricky    Soo   ricky.soo@email.com  95
+2   Alice    Wong  alice@email.com      88
+3   Bob      Tan   bob@email.com        80
+4   Charlie  Lim   charlie@email.com    60` },
+
+      10:{ title:"C# Connects to SQL", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson10/Program.cs"],
+        output:
+`=== Lesson 10: C# Connects to SQL ===
+
+--- All Students ---
+Connected to database!
+
+ID    Name                 Email                     Score
+---------------------------------------------------------
+1     Ricky Soo            ricky.soo@email.com       95
+2     Alice Wong           alice@email.com           88
+3     Bob Tan              bob@email.com             80
+4     Charlie Lim          charlie@email.com         60
+---------------------------------------------------------
+
+Search for a student by first name: » Alice
+
+--- Search Results ---
+  [2] Alice Wong — Score: 88
+  Found 1 student(s).
+
+Done! You just read from a real database using C#.` },
+
+      11:{ title:"CRUD Operations", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson11/Program.cs"],
+        output:
+`=== Lesson 11: CRUD Operations ===
+
+--- CREATE: Add a new student ---
+New student added with ID: 5
+
+--- READ: All students ---
+1     Ricky Soo        95
+2     Alice Wong       88
+3     Bob Tan          80
+4     Charlie Lim      60
+5     Eve Tan          82
+
+--- UPDATE: Change Eve's score to 90 ---
+Rows updated: 1
+
+--- READ: Eve's record after update ---
+  ID:    5
+  Name:  Eve Tan
+  Score: 90
+
+Delete the student we just added? (yes/no): » yes
+Rows deleted: 1
+Student removed.
+
+CRUD complete!` },
+
+      12:{ title:"SQL Queries", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson12/Program.cs"],
+        output:
+`=== Lesson 12: SQL Queries ===
+
+--- Students who passed (score >= 60) ---
+  FirstName: Ricky | LastName: Soo  | Score: 95
+  FirstName: Alice | LastName: Wong | Score: 88
+  FirstName: Bob   | LastName: Tan  | Score: 80
+  FirstName: Charlie | LastName: Lim | Score: 60
+  (4 row(s))
+
+--- Students scoring between 70 and 90 ---
+  Alice Wong — 88
+  Bob Tan — 80
+  (2 row(s))
+
+--- Class Statistics ---
+  Total students : 4
+  Average score  : 80.8
+  Highest score  : 95
+  Lowest score   : 60
+
+Show students scoring above: » 85
+  Ricky Soo — 95
+  Alice Wong — 88
+  (2 row(s))` },
+
+      13:{ title:"Stored Procedures", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson13/01_CreateStoredProcedures.sql","Lesson13/Program.cs"],
+        output:
+`=== Lesson 13: Stored Procedures ===
+
+--- All students (via stored procedure) ---
+1     Ricky Soo        95
+2     Alice Wong       88
+3     Bob Tan          80
+4     Charlie Lim      60
+
+--- Add a student (via stored procedure) ---
+New student ID returned from SQL Server: 6
+
+--- Get student by ID ---
+  [6] Frank Ng — Score: 78
+
+--- Update Frank's score to 85 ---
+Rows affected: 1
+
+--- Frank after update ---
+  [6] Frank Ng — Score: 85
+
+Done! Stored procedures let your database do the heavy lifting.` },
+
+      14:{ title:"Mini Project: Grade Tracker", lang:"csharp", cmd:"dotnet run",
+        files:["Lesson14/Program.cs"],
+        output:
+`=========================================
+       Student Grade Tracker
+=========================================
+
+  1-View  2-Add  3-Update  4-Delete  5-Search  6-Stats  7-Quit
+Your choice: » 1
+
+ID    Name                 Score    Grade
+----------------------------------------
+1     Ricky Soo            95       A
+2     Alice Wong           88       B
+3     Bob Tan              80       B
+4     Charlie Lim          60       D
+----------------------------------------
+  4 student(s) total.
+
+Your choice: » 6
+  Total students : 4
+  Average score  : 80.8
+  Highest score  : 95
+  Lowest score   : 60
+
+  Grade breakdown:
+    A (90-100) : 1 student(s)
+    B (80-89)  : 2 student(s)
+    C (70-79)  : 0 student(s)
+    D (60-69)  : 1 student(s)
+    F (0-59)   : 0 student(s)
+
+Your choice: » 7
+Goodbye!` },
+
+      15:{ title:"What is an API?", lang:"csharp", cmd:"dotnet run", kind:"http",
+        files:["Lesson15/Program.cs"],
+        output:
+`GET http://localhost:5000/hello
+→ Hello from your first API!
+
+GET http://localhost:5000/about
+→ {
+    "courseName": "Chello",
+    "description": "Learning C# from Hello World to Full Stack",
+    "currentLesson": 15,
+    "author": "Ricky"
+  }
+
+GET http://localhost:5000/students/2
+→ { "id": 2, "name": "Alice Wong", "score": 88 }
+
+GET http://localhost:5000/students/99
+→ 404  { "message": "Student not found", "id": 99 }` },
+
+      16:{ title:"GET Endpoints", lang:"csharp", cmd:"dotnet run", kind:"http",
+        files:["Lesson16/Program.cs"],
+        output:
+`GET /api/students?minScore=80
+→ [
+    { "id":1, "firstName":"Ricky", "score":95, "grade":"A" },
+    { "id":2, "firstName":"Alice", "score":88, "grade":"B" },
+    { "id":3, "firstName":"Bob",   "score":80, "grade":"B" }
+  ]
+
+GET /api/students?search=ali
+→ [ { "id":2, "firstName":"Alice", "lastName":"Wong", "score":88, "grade":"B" } ]
+
+GET /api/students/stats
+→ { "total":4, "averageScore":80.8, "highestScore":95, "lowestScore":60,
+    "gradeA":1, "gradeB":2, "gradeC":0, "gradeD":1, "gradeF":0 }` },
+
+      17:{ title:"POST Endpoints", lang:"csharp", cmd:"dotnet run", kind:"http",
+        files:["Lesson17/Program.cs"],
+        output:
+`POST /api/students
+{ "firstName":"Eve", "lastName":"Ng", "email":"eve@email.com", "score":75 }
+→ 201 Created
+  { "id":5, "firstName":"Eve", "lastName":"Ng", "score":75, "grade":"C" }
+
+POST /api/students   (invalid data)
+{ "firstName":"", "score":150 }
+→ 400 Bad Request
+  { "errors":[
+      "FirstName is required.",
+      "Score must be between 0 and 100."
+  ]}` },
+
+      18:{ title:"PUT & DELETE", lang:"csharp", cmd:"dotnet run", kind:"http",
+        files:["Lesson18/Program.cs"],
+        output:
+`PUT /api/students/2
+{ "firstName":"Alice", "lastName":"Wong", "email":"alice.new@email.com", "score":92 }
+→ 200 OK
+  { "id":2, "firstName":"Alice", "score":92, "grade":"A" }
+
+DELETE /api/students/4
+→ 204 No Content
+
+GET /api/students/4   (after delete)
+→ 404  { "message":"Student 4 not found." }` },
+
+      19:{ title:"Connect API to SQL", lang:"csharp", cmd:"dotnet run", kind:"http",
+        files:["Lesson19/Program.cs"],
+        output:
+`# Every request now reads/writes the real ChelloApp database
+
+GET /api/students
+→ [ { "id":1,"firstName":"Ricky","score":95,"grade":"A" },
+    { "id":2,"firstName":"Alice","score":88,"grade":"B" }, ... ]
+
+POST /api/students { "firstName":"Eve", ... , "score":82 }
+→ 201 Created  { "id":5, ... }      ← row INSERTed in SQL Server
+
+PUT /api/students/5 { ... "score":90 }
+→ 200 OK                            ← row UPDATEd in SQL Server
+
+DELETE /api/students/5
+→ 204 No Content                    ← row DELETEd from SQL Server` },
+
+      20:{ title:"API Security", lang:"csharp", cmd:"dotnet run", kind:"http",
+        files:["Lesson20/Program.cs"],
+        output:
+`POST /auth/login
+{ "username":"admin", "password":"password123" }
+→ 200 OK
+  { "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expiresIn":"1 hour", "username":"admin" }
+
+GET /api/students          (no token)
+→ 401 Unauthorized
+
+GET /api/students
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+→ 200 OK  { "requestedBy":"admin", "students":[ ... ] }
+
+GET /api/admin             (Admin role required)
+→ 200 OK  { "message":"Welcome to the admin panel!", "role":"Admin" }` },
+
+      39:{ title:"Deploy Backend", lang:"markdown", cmd:"railway up", kind:"deploy",
+        files:["Lesson39/README.md","Lesson39/api/Program.cs"],
+        output:
+`$ railway login
+✓ Logged in as ricky
+
+$ railway up
+Indexing...           ✓
+Building C# API...    ✓ Build succeeded (net10.0)
+Uploading...          ✓
+Deploying...          ✓
+
+✓ Deployment live:
+  https://chello-api-production.up.railway.app
+
+$ curl https://chello-api-production.up.railway.app/health
+OK
+
+$ curl https://chello-api-production.up.railway.app/api/students
+[ { "id":1, "firstName":"Ricky", "score":95, "grade":"A" }, ... ]` },
+    };
+
+    const GITHUB = "https://github.com/rickysoo/Chello/blob/master/";
+
+    // Apply saved theme so it matches the dashboard
+    document.body.setAttribute("data-theme", localStorage.getItem("chello-theme") || "dark");
+
+    const params = new URLSearchParams(location.search);
+    const id = parseInt(params.get("lesson"), 10);
+    const sim = SIM[id];
+    const content = document.getElementById("content");
+
+    if (!sim) {
+      document.getElementById("lessonTitle").textContent = "Lesson not found";
+      content.innerHTML = `<div class="err">No simulation found for lesson ${id||"(none)"}.
+        <div class="links"><a href="index.html">← Back to Dashboard</a></div></div>`;
+    } else {
+      document.getElementById("lessonNum").textContent = "Lesson " + String(id).padStart(2,"0");
+      document.getElementById("lessonTitle").textContent = sim.title;
+      document.title = `Lesson ${id} — ${sim.title} · Chello`;
+
+      const labels = { http:"Sample Requests & Responses", deploy:"Deployment Walkthrough", console:"Simulated Output" };
+      const outLabel = labels[sim.kind] || "Simulated Output";
+
+      // Render the simulated output, highlighting user-typed input lines (» ...)
+      const outHtml = sim.output.split("\n").map(line =>
+        line.startsWith("» ")
+          ? `<span class="input-line">${escapeHtml(line.slice(2))}</span>`
+          : escapeHtml(line.replace(/» /g, ""))
+      ).join("\n");
+
+      content.innerHTML = `
+        <div class="note">
+          This page shows the lesson's <strong>real source code</strong> plus a
+          <strong>simulated run</strong> — so you can see what it does without installing anything.
+          To run it for real: <code>${escapeHtml(sim.cmd)}</code> in the lesson folder.
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>▶ ${outLabel}</h2>
+            <button class="run-btn" id="runBtn">▶ Run</button>
+          </div>
+          <div class="term">
+            <div class="term-bar">
+              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+              <span class="term-cmd">$ ${escapeHtml(sim.cmd)}</span>
+            </div>
+            <div class="term-body" id="termBody"></div>
+          </div>
+        </div>
+
+        <div id="codePanels"></div>
+
+        <div class="links">
+          <a href="index.html">← Back to Dashboard</a>
+          ${sim.files.map(f => `<a href="${GITHUB}${f}" target="_blank" rel="noopener">${f} on GitHub ↗</a>`).join("")}
+        </div>
+      `;
+
+      // Typewriter "run" effect
+      const termBody = document.getElementById("termBody");
+      function play(){
+        termBody.innerHTML = "";
+        const full = outHtml;
+        let i = 0;
+        const speed = 6; // chars per tick
+        const timer = setInterval(() => {
+          i += speed;
+          termBody.innerHTML = full.slice(0, i);
+          termBody.scrollTop = termBody.scrollHeight;
+          if (i >= full.length) { clearInterval(timer); termBody.innerHTML = full; }
+        }, 12);
+      }
+      document.getElementById("runBtn").addEventListener("click", play);
+      termBody.innerHTML = outHtml; // show immediately; Run replays with animation
+
+      // Fetch and show each source file
+      const codePanels = document.getElementById("codePanels");
+      sim.files.forEach(path => {
+        const panel = document.createElement("div");
+        panel.className = "panel";
+        panel.innerHTML = `
+          <div class="panel-head">
+            <h2>📄 Source Code</h2>
+            <span class="file-name">${path}</span>
+          </div>
+          <pre><code class="language-${sim.lang}">Loading ${path} …</code></pre>`;
+        codePanels.appendChild(panel);
+        const codeEl = panel.querySelector("code");
+
+        fetch(path)
+          .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+          .then(text => {
+            codeEl.textContent = text;
+            if (window.hljs) hljs.highlightElement(codeEl);
+          })
+          .catch(() => {
+            codeEl.parentElement.outerHTML =
+              `<div class="err" style="margin:16px;">Couldn't load <code>${path}</code> directly
+               (browsers block <code>file://</code> reads). Run a local server
+               (<code>python -m http.server 8080</code>) or
+               <a href="${GITHUB}${path}" target="_blank" rel="noopener">view it on GitHub ↗</a>.</div>`;
+          });
+      });
+    }
+
+    function escapeHtml(s){
+      return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+  </script>
+</body>
+</html>

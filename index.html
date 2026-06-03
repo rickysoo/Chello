@@ -320,12 +320,15 @@
           {lesson.run && <div className="tag" style={{marginBottom:"10px"}}>▶ {lesson.run}</div>}
 
           <div className="card-actions">
+            {/* Every lesson gets an "Open Lesson" button.
+                - HTML/React lessons open the live page (entry)
+                - C#/SQL/API lessons open the interactive simulator page */}
             {lesson.entry
               ? <a className="btn btn-open" href={lesson.entry} target="_blank" rel="noopener">Open Lesson ↗</a>
-              : <a className="btn btn-open" href={GITHUB + lesson.code} target="_blank" rel="noopener">View Code ↗</a>}
+              : <a className="btn btn-open" href={"simulator.html?lesson=" + lesson.id} target="_blank" rel="noopener">Open Lesson ↗</a>}
 
-            {lesson.entry && lesson.code &&
-              <a className="btn btn-code" href={GITHUB + lesson.code} target="_blank" rel="noopener">API Code</a>}
+            {lesson.code &&
+              <a className="btn btn-code" href={GITHUB + lesson.code} target="_blank" rel="noopener">View Code</a>}
 
             <button
               className={"btn btn-check" + (done ? " checked" : "")}
