@@ -34,7 +34,7 @@ Then open **http://localhost:8080** in your browser.
 - ✅ **Tracks progress** — tick off lessons; saved automatically in your browser
 - 🔍 **Search** lessons by title, topic, or keyword
 - 🎯 **Filter by phase** with one click
-- 🌙 **Dark / light mode** toggle
+- ☀️ **Light / dark mode** toggle (defaults to light)
 - 🔗 **Opens each lesson** — HTML/React lessons open live; C#/SQL/API lessons open an interactive **simulator** (`simulator.html`) that shows the real source code *and* a simulated run, so you can see what every program does without installing anything
 
 > The dashboard itself is built with the very skills the course teaches — React, `localStorage`, controlled inputs, and responsive CSS. Open the file to see how it works.

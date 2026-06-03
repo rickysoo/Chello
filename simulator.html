@@ -566,7 +566,7 @@ $ curl https://chello-api-production.up.railway.app/api/students
     const GITHUB = "https://github.com/rickysoo/Chello/blob/master/";
 
     // Apply saved theme so it matches the dashboard
-    document.body.setAttribute("data-theme", localStorage.getItem("chello-theme") || "dark");
+    document.body.setAttribute("data-theme", localStorage.getItem("chello-theme") || "light");
 
     const params = new URLSearchParams(location.search);
     const id = parseInt(params.get("lesson"), 10);

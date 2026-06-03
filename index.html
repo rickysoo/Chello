@@ -346,7 +346,7 @@
     // ============================================================
     function App() {
       // Theme persisted in localStorage (Lesson 32 + 35)
-      const [theme, setTheme] = useState(() => localStorage.getItem("chello-theme") || "dark");
+      const [theme, setTheme] = useState(() => localStorage.getItem("chello-theme") || "light");
       // Completed lesson IDs, persisted (Lesson 35)
       const [done, setDone] = useState(() => {
         try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
