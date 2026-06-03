@@ -1,90 +1,143 @@
-# C# Learning Course - Chello
+# Chello — Full-Stack Web Dev Course
 
-Welcome to the C# learning course! This repository contains 8 hands-on lessons designed to teach you the fundamentals of C# programming, from basic concepts to more advanced topics.
+A 40-lesson hands-on course that takes you from C# basics all the way to a fully deployed full-stack web application. Each lesson builds on the last, and every phase ends with something you built yourself.
 
-## Course Overview
+## Tech Stack
 
-This course is structured as a series of progressive lessons, each building on the previous one. Each lesson is a self-contained C# console application that demonstrates key programming concepts.
-
-## Lessons
-
-### Lesson 01
-Introduction to C# basics and fundamental concepts.
-
-### Lesson 02
-Further exploration of core C# features.
-
-### Lesson 03
-Building on previous lessons with intermediate concepts.
-
-### Lesson 04
-Continuing the progression of C# learning.
-
-### Lesson 05
-Deepening your understanding of C# functionality.
-
-### Lesson 06
-Advanced topics and practical applications.
-
-### Lesson 07
-Building on advanced concepts.
-
-### Lesson 08
-Capstone concepts and final lessons.
-
-## Getting Started
-
-1. **Prerequisites**
-   - .NET SDK installed (version 6.0 or higher recommended)
-   - A text editor or IDE (Visual Studio, Visual Studio Code with C# extension, or Rider)
-
-2. **Running a Lesson**
-   - Navigate to the lesson directory
-   - Open a terminal and run:
-     ```bash
-     dotnet run
-     ```
-   - Or build and execute:
-     ```bash
-     dotnet build
-     dotnet bin/Debug/net8.0/Program.exe
-     ```
-
-3. **Studying a Lesson**
-   - Open `Program.cs` in your preferred editor
-   - Read through the code
-   - Modify the code to experiment and learn
-   - Run the program to see the output
-
-## Course Structure
-
-Each lesson contains:
-- **Program.cs** - The main C# code demonstrating the lesson's concepts
-- Comments explaining key points and programming concepts
-- Executable examples you can run and modify
-
-## Learning Tips
-
-- **Read the code carefully** - Pay attention to comments and structure
-- **Experiment** - Modify the code and see what happens
-- **Run each lesson** - Execute the programs to understand output and behavior
-- **Take your time** - Programming concepts build on each other
-- **Practice** - Try to modify examples or create variations
-
-## Progression
-
-Work through the lessons sequentially (Lesson 01 → Lesson 08) as each builds upon previous concepts. Don't rush—understanding fundamentals deeply will make advanced topics easier.
-
-## Notes
-
-- All lessons are console-based applications for simplicity and focus on core concepts
-- The code is designed to be educational, with clear variable names and comments
-- Each lesson can be studied independently, but sequential learning is recommended
-
-## Next Steps
-
-Start with Lesson 01 and work your way through. After completing all lessons, you'll have a solid foundation in C# programming and can move on to more advanced topics or real-world application development.
+```
+React (Frontend)
+HTML + CSS + JavaScript
+        |
+        | HTTP / JSON
+        v
+C# ASP.NET Web API (Backend)
+        |
+        | SQL queries
+        v
+MS SQL Server (Database)
+```
 
 ---
 
-Happy learning! 🚀
+## Course Phases
+
+### Phase 1: C# Basics (Lessons 1–8) ✅
+*Learn the language before connecting it to anything*
+
+| # | Lesson | What You Build |
+|---|--------|----------------|
+| 01 | Hello World & Variables | Print text, store values |
+| 02 | If/Else Decisions | Number guessing game |
+| 03 | Loops | Upgraded guessing game with retries |
+| 04 | Methods | Simple calculator |
+| 05 | Lists & Arrays | To-do list app |
+| 06 | Classes & Objects | Bank account with deposits & withdrawals |
+| 07 | Error Handling | Crash-proof calculator with try/catch |
+| 08 | File Read & Write | To-do list that saves to disk |
+
+---
+
+### Phase 2: MS SQL + C# (Lessons 9–14) ✅
+*Connect your app to a real database*
+
+| # | Lesson | What You Build |
+|---|--------|----------------|
+| 09 | SQL Basics | Create database, table, insert, select, update, delete |
+| 10 | C# Connects to SQL | Read data from DB into your C# app |
+| 11 | CRUD Operations | Create, Read, Update, Delete records from C# |
+| 12 | SQL Queries | Filter, sort, search, and aggregate data |
+| 13 | Stored Procedures | Run DB logic from C# using named procedures |
+| 14 | Mini Project | Student grade tracker — full CRUD console app |
+
+---
+
+### Phase 3: C# Web API (Lessons 15–20) 🔜
+*Build the backend that a browser can talk to*
+
+| # | Lesson | What You Build |
+|---|--------|----------------|
+| 15 | What is an API? | First ASP.NET Web API project |
+| 16 | GET Endpoints | Return data as JSON |
+| 17 | POST Endpoints | Receive and save new data |
+| 18 | PUT & DELETE | Update and remove records |
+| 19 | Connect API to SQL | Full CRUD API backed by SQL Server |
+| 20 | API Security | Add basic authentication |
+
+---
+
+### Phase 4: HTML & CSS (Lessons 21–25) 🔜
+*Build web pages before adding React*
+
+| # | Lesson | What You Build |
+|---|--------|----------------|
+| 21 | HTML Basics | Your first webpage |
+| 22 | Forms & Inputs | Login form, contact form |
+| 23 | CSS Styling | Make it look good |
+| 24 | Responsive Design | Works on mobile too |
+| 25 | Fetch API | Call your C# API from a web page |
+
+---
+
+### Phase 5: React Frontend (Lessons 26–32) 🔜
+*Build a modern interactive UI*
+
+| # | Lesson | What You Build |
+|---|--------|----------------|
+| 26 | React Basics | First React app, components |
+| 27 | Props & State | Dynamic data on screen |
+| 28 | Forms in React | Controlled inputs, form submission |
+| 29 | Fetch from API | Connect React to your C# API |
+| 30 | React Router | Multiple pages in one app |
+| 31 | Loading & Errors | Handle slow and failed API calls |
+| 32 | Styling React | Clean UI with CSS modules |
+
+---
+
+### Phase 6: Full Stack Project (Lessons 33–40) 🔜
+*Build one complete app end to end*
+
+| # | Lesson | What You Build |
+|---|--------|----------------|
+| 33 | Project Setup | React + C# API + SQL wired together |
+| 34 | User Registration | Sign up, save to DB |
+| 35 | User Login | Authenticate with JWT |
+| 36 | Dashboard | Show user data from DB |
+| 37 | Full CRUD UI | Add, edit, delete items |
+| 38 | Search & Filter | Live search with DB queries |
+| 39 | Deploy Backend | Publish C# API to a server |
+| 40 | Deploy Frontend | Host React app online |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- [.NET SDK](https://dotnet.microsoft.com/download) (version 8.0 or higher)
+- [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (for Lessons 9–14+)
+- [SQL Server Management Studio (SSMS)](https://learn.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms) (recommended)
+- A code editor — [Visual Studio](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/) with the C# extension
+
+### Running a C# Lesson
+
+```bash
+cd Lesson01
+dotnet run
+```
+
+### Running a SQL Lesson (Lesson 9, 13)
+
+Open the `.sql` files in SSMS and execute them in order (01 → 02 → ...).
+
+---
+
+## Tips
+
+- Work through lessons **sequentially** — each one builds on the last
+- **Read the comments** in every file — they explain the why, not just the what
+- **Experiment** — change the code, break things, fix them
+- Don't rush Phase 1 — strong fundamentals make every later phase easier
+
+---
+
+**40 lessons. By Lesson 40 you'll have a fully deployed full-stack web app.**
